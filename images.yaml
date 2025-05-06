@@ -1,0 +1,6 @@
+images:
+  versions:
+    - 6000.0.35f1
+  modules:
+    - android
+    - webgl
