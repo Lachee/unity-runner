@@ -4,7 +4,10 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run daily at midnight
   workflow_dispatch:  # Allow manual triggering
-
+  workflow_run:
+    workflows: ["Create Images"]
+    types:
+      - completed
 jobs:
   update-readme:
     runs-on: ubuntu-latest
