@@ -6,6 +6,9 @@ on:
     branches:
       - main
     paths:
+      - 'scripts/build-image.sh'
+      - 'Dockerfiles/*'
+      - .gitea/workflows/build-latest-image.yaml
       - 'versions.txt'
 
 jobs:
