@@ -36,11 +36,12 @@ fi
 
 # Ensure IMAGE_OS is set, default to ubuntu if not
 if [ -z "${GAMECI_OS}" ]; then
-    GAMECI_OS="ubuntu"
 
     # windows-il2cpp requires windows OS
     if [ "${GAMECI_OS}" = "windows-il2cpp" ]; then
         GAMECI_OS="windows"
+    else
+        GAMECI_OS="ubuntu"
     fi
 
     # TODO: MacOS probably requires a mac image. 

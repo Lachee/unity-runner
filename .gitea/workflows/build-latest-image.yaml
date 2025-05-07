@@ -20,10 +20,10 @@ jobs:
     strategy:
       matrix:
         platform: 
-          - webgl
-          - android
-          - mac-mono
-          - windows-mono
+          # - webgl
+          # - android
+          # - mac-mono
+          # - windows-mono
           - windows-il2cpp
 
     steps:
