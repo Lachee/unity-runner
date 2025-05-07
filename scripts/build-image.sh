@@ -38,7 +38,7 @@ fi
 if [ -z "${GAMECI_OS}" ]; then
 
     # windows-il2cpp requires windows OS
-    if [ "${GAMECI_OS}" = "windows-il2cpp" ]; then
+    if [ "${UNITY_PLATFORM}" = "windows-il2cpp" ]; then
         GAMECI_OS="windows"
     else
         GAMECI_OS="ubuntu"
