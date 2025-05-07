@@ -104,15 +104,15 @@ def main():
 
     versions={}
 
-    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)(-mono|-il2cpp)?-runner")
+    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)(-\w+)?-runner")
     for tag in tags:
         matches = pattern.match(tag)
         if matches:
             groups = matches.groups()
             version = groups[1]
             component = groups[2]
-            if groups[3]:  # If there's a fourth group
-                component = f"{component} ({groups[3].strip('-')})"  # Add it in parentheses, removing any leading/trailing dashes
+            if groups[3]:  # If there is a variance, then apply it to the component
+                component = f"{component} ({groups[3].strip('-')})"
 
             if version not in versions:
                 versions[version] = {}
