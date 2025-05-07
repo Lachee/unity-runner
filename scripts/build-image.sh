@@ -19,9 +19,32 @@ if [ -z "${UNITY_PLATFORM}" ]; then
     fi
 fi
 
+# Ensure IMAGE_NAME is set, pull from arguments if not
+if [ -z "${IMAGE_NAME}" ]; then
+    if [ -n "$3" ]; then
+        IMAGE_NAME=$3
+    else
+        echo "Error: IMAGE_NAME is not set."
+        exit 1
+    fi
+fi
+
 # Ensure GAME_CI_VERSION is set, default to 3 if not
 if [ -z "${GAMECI_VERSION}" ]; then
     GAMECI_VERSION=3
+fi
+
+# Ensure PLATFORM is set, default to the current system if not
+if [ -z "${PLATFORM}" ]; then
+    PLATFORM=$(uname -m)
+    case "${PLATFORM}" in
+        x86_64) PLATFORM="linux/amd64" ;;
+        arm64) PLATFORM="linux/arm64" ;;
+        *) 
+            echo "Error: Unsupported platform ${PLATFORM}."
+            exit 1
+            ;;
+    esac
 fi
 
 BASE_IMAGE=unityci/editor:ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
@@ -30,6 +53,7 @@ TAG=ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
 echo "Base Image: ${BASE_IMAGE}"
 echo "Tag: ${TAG}"
 echo "Image: ${IMAGE_NAME}:${TAG}"
+echo "Platfrom: ${PLATFORM}"
 
 docker build \
     --platform ${PLATFORM} \
@@ -48,4 +72,3 @@ if [ -n "$GITHUB_ENV" ]; then
     echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
     echo "TAG=${TAG}" >> $GITHUB_ENV
 fi
-``

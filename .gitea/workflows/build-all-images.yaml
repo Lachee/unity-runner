@@ -19,9 +19,7 @@ jobs:
     needs: get-versions
     runs-on: ubuntu-latest
     env:
-      GAMECI_VERSION: 3
-      PLATFORM: linux/amd64
-      DOCKER_REGISTRY: docker.lakes.house
+      DOCKER_REGISTRY: docker.lakes.house/
 
     strategy:
       matrix:
@@ -43,6 +41,7 @@ jobs:
         env:
           UNITY_VERSION: ${{ matrix.version }}
           UNITY_PLATFORM: ${{ matrix.platform }}
+          IMAGE_NAME: ${{ env.DOCKER_REGISTRY }}unityci/editor
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
           
       - name: Push Docker Image
