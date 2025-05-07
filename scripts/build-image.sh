@@ -68,7 +68,8 @@ if [ $? -ne 0 ]; then
 fi
 
 # Export IMAGE_NAME and TAG for GitHub Actions
-if [ -n "$GITHUB_ENV" ]; then
-    echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-    echo "TAG=${TAG}" >> $GITHUB_ENV
+if [ -n "$GITHUB_OUTPUT" ]; then
+    echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+    echo "TAG=${TAG}" >> $GITHUB_OUTPUT
+    echo "IMAGE=${IMAGE_NAME}:${TAG}" >> $GITHUB_OUTPUT
 fi

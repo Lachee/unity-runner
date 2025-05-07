@@ -21,7 +21,10 @@ jobs:
       matrix:
         platform: 
           - webgl
-          - android
+         # - android
+         # - mac-mono
+         # - windows-mono
+         # - windows-il2cpp
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +42,7 @@ jobs:
 
       - name: Build Docker Image
         run: ./scripts/build-image.sh
+        id: build-image
         env:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
           UNITY_PLATFORM: ${{ matrix.platform }}
@@ -46,4 +50,8 @@ jobs:
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
 
       - name: Push Docker Image
-        run: echo "TODO"
+        run: |
+            echo "Pushing Docker Image..."
+            echo "Image Name: ${{ steps.build-image.outputs.IMAGE_NAME }}"
+            echo "Tag: ${{ steps.build-image.outputs.TAG }}"
+            echo "Image: ${{ steps.build-image.outputs.IMAGE }}"
