@@ -108,7 +108,9 @@ def main():
     for tag in tags:
         matches = pattern.match(tag)
         if matches:
-            [ image_os, version, component ] = matches.groups()
+            groups = matches.groups()
+            version = groups[1]
+            component = groups[2]
             if version not in versions:
                 versions[version] = {}
             versions[version][component] = tag
