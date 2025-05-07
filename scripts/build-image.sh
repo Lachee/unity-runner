@@ -60,7 +60,7 @@ echo "- Image: ${IMAGE}:${TAG}"
 docker build \
     --platform ${PLATFORM} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
-    -t FULL_IMAGE \
+    -t ${FULL_IMAGE} \
     ${DOCKER_BUILD_ARGS} \
     .
 
