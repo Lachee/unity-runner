@@ -22,7 +22,7 @@ jobs:
         platform: 
           - webgl
           - android
-          # - mac-mono
+          - mac-mono
           # - windows-mono
           # - windows-il2cpp
 
