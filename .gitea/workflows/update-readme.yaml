@@ -28,6 +28,7 @@ jobs:
           DOCKER_REGISTRY: docker.lakes.house
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE: unityci/editor
 
       - name: Commit changes if README was updated
         run: |

@@ -87,23 +87,17 @@ def get_private_registry_tags(registry, repository):
     return data.get("tags", [])
 
 def main():
-    parser = argparse.ArgumentParser(description="Get all tags for a Docker image")
-    parser.add_argument("image", help="Docker image name (e.g., 'library/ubuntu' or 'nginx')")
-    parser.add_argument("--registry", help="Registry URL for private registry (can also set DOCKER_REGISTRY env var)", default=None)
-    parser.add_argument("--limit", type=int, help="Maximum number of tags to retrieve (Docker Hub only)", default=1000)
-    parser.add_argument("--output", help="Output file path (default: stdout)")
-    args = parser.parse_args()
     
     # Check for registry in environment variable if not specified in args
-    registry = args.registry or os.getenv('DOCKER_REGISTRY')
-    repository = args.image
+    registry = os.getenv('DOCKER_REGISTRY')
+    repository = os.getenv('IMAGE')
 
     if registry:
         print(f"Fetching tags for {repository} from {registry}...")
         tags = get_private_registry_tags(registry, repository)
     else:
         print(f"Fetching tags for {repository} from Docker Hub...")
-        tags = get_docker_hub_tags(repository, args.limit)
+        tags = get_docker_hub_tags(repository, 100)
     
     # Sort tags
     tags.sort()
@@ -157,16 +151,4 @@ def main():
     print("Done!")
 
 if __name__ == "__main__":
-    # Print environment variable usage information
-    if len(sys.argv) == 1 or (len(sys.argv) == 2 and sys.argv[1] in ['-h', '--help']):
-        print("\nEnvironment Variables:")
-        print("  DOCKER_REGISTRY    - URL of private Docker registry")
-        print("  DOCKER_USERNAME   - Username")
-        print("  DOCKER_PASSWORD - Password")
-        print("\nExample:")
-        print("  export DOCKER_REGISTRY=https://registry.example.com")
-        print("  export DOCKER_USERNAME=username")
-        print("  export DOCKER_PASSWORD=password")
-        print("  python docker_image_tags.py myproject/api\n")
-    
     main()
