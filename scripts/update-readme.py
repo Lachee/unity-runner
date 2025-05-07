@@ -111,6 +111,9 @@ def main():
             groups = matches.groups()
             version = groups[1]
             component = groups[2]
+            if groups[3]:  # If there's a fourth group
+                component = f"{component} ({groups[3].strip('-')})"  # Add it in parentheses, removing any leading/trailing dashes
+
             if version not in versions:
                 versions[version] = {}
             versions[version][component] = tag
