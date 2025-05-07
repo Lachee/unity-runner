@@ -39,6 +39,7 @@ jobs:
         run: |
           VERSION=$(head -n 1 versions.txt)
           echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Unity Version: $VERSION"
 
       - name: Docker Build
         run: ./scripts/build-image.sh
