@@ -104,7 +104,7 @@ def main():
 
     versions={}
 
-    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)-runner")
+    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)(-mono|-il2cpp)?-runner")
     for tag in tags:
         matches = pattern.match(tag)
         if matches:
