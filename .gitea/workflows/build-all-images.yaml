@@ -2,12 +2,21 @@ name: Create Images
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
+  get-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.get-versions.outputs.versions }}
+    steps:
+      - name: Get Unity Versions
+        id: get-versions
+        run: |
+          VERSIONS=$(head -n -1 versions.txt | tr '\n' ',')
+          echo "::set-output name=versions::$VERSIONS"
+
   build-docker:
+    needs: get-versions
     runs-on: ubuntu-latest
     env:
       GAMECI_VERSION: 3
@@ -19,30 +28,22 @@ jobs:
         platform: 
           - webgl
           - android
-        version: 
-          - 6000.0.35f1
+        version: ${{ fromJson(needs.get-versions.outputs.versions) }}
     steps:
       - uses: actions/checkout@v4
       - name: Login to Docker Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.DOCKER_REGISTRY }}  # usual credentials for bastion.local
+          registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          
+
       - name: Build Docker Image
-        run: |
-            BASE_IMAGE=unityci/editor:ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAME_CI_VERSION}
-            TAG=${{ env.DOCKER_REGISTRY }}/unityci/editor:ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
-            docker build \
-              --platform ${PLATFORM} \
-              --build-arg GAME_CI_UNITY_EDITOR_IMAGE=${BASE_IMAGE} \
-              -t ${TAG} \
-              Dockerfiles/UnityEditor.Dockerfile
-            
+        run: ./scripts/build-image.sh
         env:
           UNITY_VERSION: ${{ matrix.version }}
           UNITY_PLATFORM: ${{ matrix.platform }}
-    
-
-
+          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+          
+      - name: Push Docker Image
+        if: ${{ false }}

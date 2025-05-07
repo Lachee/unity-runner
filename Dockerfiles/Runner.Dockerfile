@@ -1,6 +1,6 @@
-ARG GAME_CI_UNITY_EDITOR_IMAGE=unityci/editor
+ARG BASE_IMAGE=unityci/editor
 
-FROM $GAME_CI_UNITY_EDITOR_IMAGE
+FROM $BASE_IMAGE
 
 # Setup Dependants
 RUN apt-get update && \

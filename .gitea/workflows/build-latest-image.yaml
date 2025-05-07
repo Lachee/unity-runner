@@ -1,0 +1,48 @@
+name: Create Images
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'versions.txt'
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    env:
+      GAMECI_VERSION: 3
+      PLATFORM: linux/amd64
+      DOCKER_REGISTRY: docker.lakes.house
+
+    strategy:
+      matrix:
+        platform: 
+          - webgl
+          - android
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}  # usual credentials for bastion.local
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - name: Get Unity Version
+        id: get-unity-version
+        run: |
+          VERSION=$(head -n 1 versions.txt)
+          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Build Docker Image
+        run: ./scripts/build-image.sh
+        env:
+          UNITY_VERSION: ${{ env.UNITY_VERSION }}
+          UNITY_PLATFORM: ${{ matrix.platform }}
+          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+          
+      - name: Push Docker Image
+        if: ${{ false }}
