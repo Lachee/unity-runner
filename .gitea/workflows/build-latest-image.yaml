@@ -21,10 +21,10 @@ jobs:
       matrix:
         platform: 
           - webgl
-         # - android
-         # - mac-mono
-         # - windows-mono
-         # - windows-il2cpp
+          - android
+          - mac-mono
+          - windows-mono
+          - windows-il2cpp
 
     steps:
       - uses: actions/checkout@v4
