@@ -35,12 +35,12 @@ if [ -z "${GAMECI_VERSION}" ]; then
 fi
 
 # Ensure IMAGE_OS is set, default to ubuntu if not
-if [ -z "${IMAGE_OS}" ]; then
-    IMAGE_OS="ubuntu"
+if [ -z "${GAMECI_OS}" ]; then
+    GAMECI_OS="ubuntu"
 
     # windows-il2cpp requires windows OS
-    if [ "${UNITY_PLATFORM}" = "windows-il2cpp" ]; then
-        IMAGE_OS="windows"
+    if [ "${GAMECI_OS}" = "windows-il2cpp" ]; then
+        GAMECI_OS="windows"
     fi
 
     # TODO: MacOS probably requires a mac image. 
@@ -61,8 +61,8 @@ if [ -z "${PLATFORM}" ]; then
 fi
 
 
-BASE_IMAGE=unityci/editor:${IMAGE_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
-TAG=${IMAGE_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
+BASE_IMAGE=unityci/editor:${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
+TAG=${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
 FULL_IMAGE=${IMAGE}:${TAG}
 
 echo "Building Docker image ${FULL_IMAGE}"
