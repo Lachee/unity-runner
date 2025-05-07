@@ -23,7 +23,7 @@ jobs:
           pip install requests
 
       - name: Generate Docker Images Table
-        run: python scripts/build-readme.py
+        run: python scripts/update-readme.py
         env:
           DOCKER_REGISTRY: docker.lakes.house
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
