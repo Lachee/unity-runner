@@ -60,7 +60,7 @@ docker build \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
     -t ${IMAGE_NAME}:${TAG} \
     ${DOCKER_BUILD_ARGS} \
-    ./Dockerfiles/Runner.Dockerfile
+    .
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker build failed."
