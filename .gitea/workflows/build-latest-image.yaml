@@ -32,7 +32,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           
       - name: Get Unity Version
-        id: get-unity-version
         run: |
           VERSION=$(head -n 1 versions.txt)
           echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
@@ -43,6 +42,6 @@ jobs:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
           UNITY_PLATFORM: ${{ matrix.platform }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
-          
+
       - name: Push Docker Image
-        if: ${{ false }}
+        run: echo "TODO"
