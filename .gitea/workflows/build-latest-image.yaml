@@ -23,7 +23,7 @@ jobs:
           - webgl
           - android
           - mac-mono
-          # - windows-mono
+          - windows-mono
           # - windows-il2cpp
 
     steps:
