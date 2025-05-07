@@ -40,7 +40,7 @@ jobs:
           VERSION=$(head -n 1 versions.txt)
           echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Build Docker Image
+      - name: Docker Build
         run: ./scripts/build-image.sh
         id: build-image
         env:
@@ -49,9 +49,9 @@ jobs:
           IMAGE_NAME: ${{ env.DOCKER_REGISTRY }}unityci/editor
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
 
-      - name: Push Docker Image
+      - name: Docker Push
         run: |
-            echo "Pushing Docker Image..."
-            echo "Image Name: ${{ steps.build-image.outputs.IMAGE_NAME }}"
-            echo "Tag: ${{ steps.build-image.outputs.TAG }}"
-            echo "Image: ${{ steps.build-image.outputs.IMAGE }}"
+            echo "Pushing Docker Image  ${{ steps.build-image.outputs.FULL_IMAGE }}"
+            echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"
+            echo "- Tag: ${{ steps.build-image.outputs.TAG }}"
+            docker push ${{ steps.build-image.outputs.FULL_IMAGE }}

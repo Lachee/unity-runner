@@ -19,12 +19,12 @@ if [ -z "${UNITY_PLATFORM}" ]; then
     fi
 fi
 
-# Ensure IMAGE_NAME is set, pull from arguments if not
-if [ -z "${IMAGE_NAME}" ]; then
+# Ensure IMAGE is set, pull from arguments if not
+if [ -z "${IMAGE}" ]; then
     if [ -n "$3" ]; then
-        IMAGE_NAME=$3
+        IMAGE=$3
     else
-        echo "Error: IMAGE_NAME is not set."
+        echo "Error: IMAGE is not set."
         exit 1
     fi
 fi
@@ -49,16 +49,18 @@ fi
 
 BASE_IMAGE=unityci/editor:ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
 TAG=ubuntu-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
+FULL_IMAGE=${IMAGE}:${TAG}
 
-echo "Base Image: ${BASE_IMAGE}"
-echo "Tag: ${TAG}"
-echo "Image: ${IMAGE_NAME}:${TAG}"
-echo "Platfrom: ${PLATFORM}"
+echo "Building Docker image ${FULL_IMAGE}"
+echo "- Platfrom: ${PLATFORM}"
+echo "- Base: ${BASE_IMAGE}"
+echo "- Tag: ${TAG}"
+echo "- Image: ${IMAGE}:${TAG}"
 
 docker build \
     --platform ${PLATFORM} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
-    -t ${IMAGE_NAME}:${TAG} \
+    -t FULL_IMAGE \
     ${DOCKER_BUILD_ARGS} \
     .
 
@@ -67,9 +69,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Export IMAGE_NAME and TAG for GitHub Actions
+# Export IMAGE and TAG for GitHub Actions
 if [ -n "$GITHUB_OUTPUT" ]; then
-    echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+    echo "IMAGE=${IMAGE}" >> $GITHUB_OUTPUT
     echo "TAG=${TAG}" >> $GITHUB_OUTPUT
-    echo "IMAGE=${IMAGE_NAME}:${TAG}" >> $GITHUB_OUTPUT
+    echo "FULL_IMAGE=${FULL_IMAGE}" >> $GITHUB_OUTPUT
 fi
