@@ -1,8 +1,6 @@
 ARG BASE_IMAGE=unityci/editor
 
 FROM $BASE_IMAGE
-
-# Setup Dependants
 RUN apt-get update && \
         apt-get install -y \
         git \
@@ -27,16 +25,17 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 # Install Blender
 ARG BLENDER_SHORT_VERSION=3.4
 ARG BLENDER_FULL_VERSION=3.4.1
-
-RUN echo "BLENDER_SHORT_VERSION: $BLENDER_SHORT_VERSION"
-RUN echo "BLENDER_FULL_VERSION: $BLENDER_FULL_VERSION"
-RUN apt-get update && \
+RUN echo "BLENDER_FULL_VERSION: $BLENDER_FULL_VERSION" && \
+        echo echo "BLENDER_SHORT_VERSION: $BLENDER_SHORT_VERSION" && \
         apt-get install -y wget && \
         wget https://download.blender.org/release/Blender$BLENDER_SHORT_VERSION/blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
         tar -xf blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
         rm blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz
-
 ENV PATH="$PATH:/blender-$BLENDER_FULL_VERSION-linux-x64"
+
+# Add custom scripts
+COPY scripts/activate.sh /activate.sh
+RUN chmod +x /activate.sh 
 
 # Done
 ENTRYPOINT [ "/entrypoint.sh" ]
