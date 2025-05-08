@@ -24,6 +24,7 @@ jobs:
           - android
           - mac-mono
           - windows-mono
+          - linux-il2cpp
           # - windows-il2cpp
 
     steps:
