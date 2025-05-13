@@ -1,0 +1,72 @@
+name: Build
+
+on:
+  push: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # This is a label, just says what runners we could use.
+    strategy:
+      matrix:
+        version: 
+        - 6000.0.35f1
+        platform: 
+          - { target: Android,      image: android,       file: app.apk }
+          - { target: WebGL,        image: webgl,         file: site }
+          - { target: Win64,        image: windows-mono,  file: app.exe }
+          - { target: StandaloneOSX, image: mac-mono,      file: app,    profile: "Assets/Settings/Build Profiles/macOS-mono.asset" }
+    container:
+      image: ${{ secrets.DOCKER_REGISTRY }}/unityci/editor:ubuntu-${{ matrix.version }}-${{ matrix.platform.image }}-runner
+      credentials:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+      options: --workdir=/workspace --rm --memory=16G
+      env:
+        UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+        UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        UNITY_VERSION: ${{ matrix.version }}
+        BUILD_TARGET: ${{ matrix.platform.target }}
+        BUILD_NAME: ${{ matrix.platform.target}}
+        BUILD_PATH: build/${{ matrix.platform.target }}
+        BUILD_FILE: ${{ matrix.platform.file }}
+        BUILD_PROFILE: ${{ matrix.platform.profile || '' }}
+        PROJECT_PATH: .
+        GITHUB_WORKSPACE: ${{ gitea.workspace }}
+        SKIP_ACTIVATION: false
+        MANUAL_EXIT: false
+        ENABLE_GPU: false
+        VERSION: 0.0.129
+        ANDROID_VERSION_CODE: 129
+        ANDROID_EXPORT_TYPE: androidPackage
+        ANDROID_SYMBOL_TYPE: none
+        RUN_AS_HOST_USER: false
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.logging.level=info"
+        CUSTOM_PARAMETERS: -nographics ${{ matrix.platform.parameters || '' }}
+
+    steps:
+      - uses: actions/checkout@v4 
+
+      - name: Unity License Conversion # This is a WIP. I am trying to make this a /activate.sh or just straight in /entrypoint.sh
+        run: |
+          if [ -z "$UNITY_SERIAL" ] && [ ! -z "$UNITY_LICENSE" ]; then
+            echo "Extracting serial from license file"
+            UNITY_SERIAL=$(echo "$UNITY_LICENSE" | grep -oP '(?<=<DeveloperData Value=")[^"]+' || echo "")
+            if [ ! -z "$UNITY_SERIAL" ]; then
+              echo "Found serial in license file"
+            fi
+
+            echo "$UNITY_SERIAL" | base64 -d >/tmp/serial_decoded
+            UNITY_SERIAL=$(dd if=/tmp/serial_decoded bs=1 skip=4 2>/dev/null)
+            rm /tmp/serial_decoded
+          fi
+          echo "Setting environment"
+          echo "UNITY_SERIAL=$UNITY_SERIAL" >> $GITHUB_ENV
+
+      - name: Build Project
+        run: /entrypoint.sh
+
+      - uses: christopherhx/gitea-upload-artifact@v4 # Gitea is bugged prior to 1.24, you need to use this uploader.
+        with:
+          name: ${{ matrix.platform.target }}
+          path: build/${{ matrix.platform.target }}
