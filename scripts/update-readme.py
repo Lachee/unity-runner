@@ -8,6 +8,18 @@ import os
 import re
 from urllib.parse import urlparse
 
+# Define platform colors for badges
+PLATFORM_COLORS = {
+    'android': 'brightgreen',
+    'webgl': 'yellow',
+    'ios': 'orange',
+    'linux (il2cpp)': 'black',
+    'linux (mono)': 'black',
+    'mac (mono)': 'white',
+    'mac (il2cpp)': 'white',
+    'windows (mono)': 'blue',
+    'windows (il2cpp)': 'blue'
+}
 
 def get_docker_hub_tags(repository, limit=1000):
     """
@@ -86,6 +98,14 @@ def get_private_registry_tags(registry, repository):
     data = response.json()
     return data.get("tags", [])
 
+def format_tag(registry, repository, platform, tag ):
+    # Get color for platform, default to blue if not found
+    colour = PLATFORM_COLORS.get(platform, 'blue')
+    safeTag = requests.utils.quote(tag.replace('-', '--'))
+    safePlatform = requests.utils.quote(platform)
+    url = requests.utils.quote(f"https://{registry}{repository}/tag/{tag}")
+    return f"![Static Badge](https://img.shields.io/badge/{safeTag}-{safePlatform}-{colour}?logo=docker&link={url})"
+
 def main():
     
     # Check for registry in environment variable if not specified in args
@@ -135,7 +155,7 @@ def main():
         markdown += f"| {version} |"
         for component in all_components:
             tag = versions[version].get(component, "")
-            markdown += f" {tag} |"
+            markdown += format_tag(registry, repository, component, tag) + " |"
         markdown += "\n"
 
     # Read existing README.md
