@@ -19,6 +19,7 @@ jobs:
         platform: 
           - webgl
           - android
+          - ios
           - mac-mono
           - windows-mono
           - linux-il2cpp
