@@ -44,10 +44,8 @@ jobs:
           - linux-il2cpp
         
     name: Build 🐳 ${{ matrix.platform }}
+    if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform }}
     steps:
-      - name: Skip if platform does not match input
-        if: ${{ github.event.inputs.platform != 'all' && github.event.inputs.platform != '' && matrix.platform != github.event.inputs.platform }}
-        run: exit 0
 
       - uses: actions/checkout@v4
       - name: Login to Docker Registry
