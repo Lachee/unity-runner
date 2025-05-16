@@ -84,14 +84,12 @@ def get_private_registry_tags(registry, repository):
 
 def format_tag(registry, repository, platform, tag ):
     # Get color for platform, default to blue if not found
-    registryName = "Docker Hub"
     url = f"https://hub.docker.com/r/{repository}/tags?name={tag}"
 
     if registry:
-        registryName = registry
-        url = f"https://{registry}{repository}/tag/{tag}"
+        url = f"https://{registry}/{repository}/tag/{tag}"
 
-    return f"[{registryName}]({url})"
+    return f"[🐳 View]({url})"
 
 def main():
     
@@ -145,7 +143,7 @@ def main():
             if tag:
                 markdown += format_tag(registry, repository, component, tag) + " |"
             else:
-                markdown += "❌ |"
+                markdown += "❌ N/A |"
         markdown += "\n"
 
     # Read existing README.md
