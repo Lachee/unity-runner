@@ -5,9 +5,12 @@ on:
     - cron: '0 0 * * *'   # Run daily at midnight
   workflow_dispatch:      # Allow manual triggering
   workflow_run:           # Trigger from images
-    workflows:
-      types:
-        - completed
+    types:
+      - completed
+  push:
+    paths:
+      - scripts/update-readme.py
+      - .gitea/workflows/update-readme.py
       
 jobs:
   update-readme:
