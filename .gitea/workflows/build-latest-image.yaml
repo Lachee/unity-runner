@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_REGISTRY: docker.lakes.house/
+      UNITY_VERSION: ${{ github.event.inputs.unity_version }}
 
     strategy:
       matrix:
@@ -55,6 +56,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           
       - name: Get Unity Version
+        if: ${{ github.event.inputs.unity_version == '' }}
         run: |
           VERSION=$(head -n 1 versions.txt)
           echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
