@@ -34,8 +34,8 @@ RUN echo "BLENDER_FULL_VERSION: $BLENDER_FULL_VERSION" && \
 ENV PATH="$PATH:/blender-$BLENDER_FULL_VERSION-linux-x64"
 
 # Add custom scripts
-COPY scripts/activate.sh /activate.sh
-RUN chmod +x /activate.sh 
+COPY scripts/build.sh /build.sh
+RUN chmod +x /build.sh 
 
 # Done
 ENTRYPOINT [ "/entrypoint.sh" ]
