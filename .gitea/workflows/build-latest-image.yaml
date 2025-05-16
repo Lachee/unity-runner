@@ -2,10 +2,9 @@ name: Create Images
 
 on:    
   push:
-    branches:
-      - main
-    paths:
-      - 'versions.txt'
+    branches: [main]
+    paths: ['versions.txt']
+
   workflow_dispatch:
     inputs:
       unity_version:
@@ -62,7 +61,7 @@ jobs:
           echo "Unity Version: $VERSION"
 
       - name: Docker Build
-        run: ./scripts/build-image.sh
+        run: .gitea/workflows/scripts/build-image.sh
         id: build-image
         env:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}

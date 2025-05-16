@@ -5,12 +5,11 @@ on:
     - cron: '0 0 * * *'   # Run daily at midnight
   workflow_dispatch:      # Allow manual triggering
   workflow_run:           # Trigger from images
-    types:
-      - completed
+    types: [completed]
   push:
     paths:
-      - scripts/update-readme.py
-      - .gitea/workflows/update-readme.py
+      - .gitea/workflows/update-readme.yaml
+      - .gitea/workflows/scripts/update-readme.py
       
 jobs:
   update-readme:
@@ -30,7 +29,7 @@ jobs:
           pip install requests
 
       - name: Generate Docker Images Table
-        run: python scripts/update-readme.py
+        run: python .gitea/workflows/scripts/update-readme.py
         env:
           DOCKER_REGISTRY: docker.lakes.house
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
