@@ -6,9 +6,8 @@ on:
   workflow_dispatch:      # Allow manual triggering
   workflow_run:           # Trigger from images
     workflows:
-      - Create Images
-    types:
-      - completed
+      types:
+        - completed
       
 jobs:
   update-readme:
