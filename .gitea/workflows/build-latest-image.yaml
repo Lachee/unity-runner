@@ -1,12 +1,31 @@
 name: Create Images
 
-on:
-  workflow_dispatch:
+on:    
   push:
     branches:
       - main
     paths:
       - 'versions.txt'
+  workflow_dispatch:
+    inputs:
+      unity_version:
+        description: 'Unity Version'
+        required: true
+        default: '6000.0.35f1'
+        type: string
+      platform:
+        description: 'Platform'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - webgl
+          - android
+          - ios
+          - mac-mono
+          - windows-mono
+          - linux-il2cpp
 
 jobs:
   build-docker:
@@ -23,9 +42,13 @@ jobs:
           - mac-mono
           - windows-mono
           - linux-il2cpp
-          # - windows-il2cpp
-
+        
+    name: Build 🐳 ${{ matrix.platform }}
     steps:
+      - name: Skip if platform does not match input
+        if: ${{ github.event.inputs.platform != 'all' && github.event.inputs.platform != '' && matrix.platform != github.event.inputs.platform }}
+        run: exit 0
+
       - uses: actions/checkout@v4
       - name: Login to Docker Registry
         uses: docker/login-action@v3
