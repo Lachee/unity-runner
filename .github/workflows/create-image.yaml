@@ -38,15 +38,15 @@ jobs:
       - name: Get Unity Version
         id: unity-version
         run: |
-          UNITY_VERSION=$(grep ${{ matrix.platform }} versions.txt | cut -d' ' -f2)
-          echo "UNITY_VERSION=$UNITY_VERSION" >> $GITHUB_OUTPUT
-          echo "Unity version for ${{ matrix.platform }}: $UNITY_VERSION"
+          VERSION=$(head -n 1 versions.txt)
+          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Unity Version: $VERSION"
 
       - name: Docker Build
         run: .gitea/workflows/scripts/build-image.sh
         id: build-image
         env:
-          UNITY_VERSION: ${{ steps.unity-version.outputs.UNITY_VERSION }}
+          UNITY_VERSION: ${{ env.UNITY_VERSION }}
           UNITY_PLATFORM: ${{ matrix.platform }}
           IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
