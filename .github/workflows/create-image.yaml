@@ -36,7 +36,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Get Unity Version
-        run: echo "UNITY_VERSION=$(cat versions.txt | grep ${{ matrix.platform }} | cut -d' ' -f2)" >> $GITHUB_ENV
+        run: |
+          UNITY_VERSION=$(grep ${{ matrix.platform }} versions.txt | cut -d' ' -f2)
+          echo "UNITY_VERSION=$UNITY_VERSION" >> $GITHUB_ENV
+          echo "Unity version for ${{ matrix.platform }}: $UNITY_VERSION"
 
       - name: Docker Build
         run: .gitea/workflows/scripts/build-image.sh
