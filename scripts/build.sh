@@ -32,6 +32,7 @@ if [ ! -z "$ANDROID_KEYSTORE_BASE64" ]; then
     fi
 
     echo "Storing keystore file to $ANDROID_KEYSTORE_NAME"
+    echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_NAME"
     set_env_var "ANDROID_KEYSTORE_NAME" $ANDROID_KEYSTORE_NAME
 fi
 
