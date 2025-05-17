@@ -70,6 +70,7 @@ jobs:
           UNITY_PLATFORM: ${{ matrix.platform }}
           IMAGE: ${{ env.DOCKER_REGISTRY }}unityci/editor
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+          ONLY_RUNNER_TAG: true
 
       - name: Docker Push
         run: |

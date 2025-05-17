@@ -63,18 +63,27 @@ fi
 
 
 BASE_IMAGE=unityci/editor:${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
-TAG=${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-runner
+SHORT_TAG=${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}
+TAG=${SHORT_TAG}-runner
 FULL_IMAGE=${IMAGE}:${TAG}
+
+ADDITIONAL_TAGS=""
+if [ "${ONLY_RUNNER_TAG}" != "true" ]; then
+    ADDITIONAL_TAGS="$ADDITIONAL_TAGS -t ${IMAGE}:${SHORT_TAG}"
+    ADDITIONAL_TAGS="$ADDITIONAL_TAGS -t ${IMAGE}:${SHORT_TAG}-${GAMECI_VERSION}"
+fi
 
 echo "Building Docker image ${FULL_IMAGE}"
 echo "- Platfrom: ${PLATFORM}"
 echo "- Base: ${BASE_IMAGE}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${IMAGE}:${TAG}"
+echo "- Additional Tags: ${ADDITIONAL_TAGS}"
 
 docker build \
     --platform ${PLATFORM} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
+    ${ADDITIONAL_TAGS} \
     -t ${FULL_IMAGE} \
     ${DOCKER_BUILD_ARGS} \
     .
