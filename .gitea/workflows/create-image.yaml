@@ -9,7 +9,7 @@ on:
     inputs:
       unity_version:
         description: 'Unity Version'
-        required: true
+        required: false
         default: '6000.0.35f1'
         type: string
       platform:
