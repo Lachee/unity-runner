@@ -1,0 +1,52 @@
+name: Create Images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: 
+      - versions.txt
+      - Dockerfile
+      - .gitea/workflows/create-image.yaml
+      
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform: 
+          - webgl
+          - android
+          - ios
+          - mac-mono
+          - windows-mono
+          - linux-il2cpp
+        
+    name: Build 🐳 ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Get Unity Version
+        run: echo "UNITY_VERSION=$(cat versions.txt | grep ${PLATFORM} | cut -d' ' -f2)" >> $GITHUB_ENV
+
+      - name: Docker Build
+        run: .gitea/workflows/scripts/build-image.sh
+        id: build-image
+        env:
+          UNITY_VERSION: ${{ env.UNITY_VERSION }}
+          UNITY_PLATFORM: ${{ matrix.platform }}
+          IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
+          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+
+      - name: Docker Push
+        run: |
+          echo "Pushing Docker Image  ${{ steps.build-image.outputs.FULL_IMAGE }}"
+          echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"
+          echo "- Tag: ${{ steps.build-image.outputs.TAG }}"
+          docker push ${{ steps.build-image.outputs.FULL_IMAGE }}
