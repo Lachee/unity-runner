@@ -7,7 +7,7 @@ on:
     paths: 
       - versions.txt
       - Dockerfile
-      - .gitea/workflows/create-image.yaml
+      - .github/workflows/create-image.yaml
 
 jobs:
   build-docker:
