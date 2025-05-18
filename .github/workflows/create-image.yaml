@@ -22,9 +22,6 @@ jobs:
           - mac-mono
           - windows-mono
           - linux-il2cpp
-        ubuntu_image: 
-          - ubuntu-latest
-          # - ubuntu-latest-full
         
     name: Build 🐳 ${{ matrix.platform }}
     environment:
@@ -53,7 +50,6 @@ jobs:
           UNITY_PLATFORM: ${{ matrix.platform }}
           IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
-          UBUNTU_IMAGE: gitea/runner-images:${{ matrix.ubuntu_image }}
 
       - name: Docker Push
         run: |
