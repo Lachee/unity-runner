@@ -73,15 +73,26 @@ if [ "${ONLY_RUNNER_TAG}" != "true" ]; then
     ADDITIONAL_TAGS="$ADDITIONAL_TAGS -t ${IMAGE}:${SHORT_TAG}-${GAMECI_VERSION}"
 fi
 
+ADDITIONAL_ARGS=""
+if [ ! -z "${WINDOWS_IMAGE}" ]; then
+    ADDITIONAL_ARGS="${ADDITIONAL_ARGS} --build-arg windowsImage=${WINDOWS_IMAGE}"
+fi
+if [ ! -z "${UBUNTU_IMAGE}" ]; then
+    ADDITIONAL_ARGS="${ADDITIONAL_ARGS} --build-arg ubuntuImage=${UBUNTU_IMAGE}"
+fi
+
+
 echo "Building Docker image ${FULL_IMAGE}"
 echo "- Platfrom: ${PLATFORM}"
-echo "- Base: ${BASE_IMAGE}"
+echo "- Base Image: ${BASE_IMAGE}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${IMAGE}:${TAG}"
 echo "- Additional Tags: ${ADDITIONAL_TAGS}"
+echo "- Additional Args: ${ADDITIONAL_ARGS}"
 
 docker build \
     --platform ${PLATFORM} \
+    ${ADDITIONAL_ARGS} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
     ${ADDITIONAL_TAGS} \
     -t ${FULL_IMAGE} \

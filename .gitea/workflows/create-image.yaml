@@ -71,6 +71,7 @@ jobs:
           IMAGE: ${{ env.DOCKER_REGISTRY }}unityci/editor
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
           ONLY_RUNNER_TAG: true
+          UBUNTU_IMAGE: gitea/runner-images:ubuntu-latest
 
       - name: Docker Push
         run: |
