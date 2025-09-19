@@ -10,13 +10,16 @@ if [ -z "${UNITY_VERSION}" ]; then
 fi
 
 # Fetch the changelog and extract the changeset ID for the specified Unity version
-CHANGELOG_URL="https://public-cdn.cloud.unity3d.com/hub/prod/releases-${UNITY_VERSION}.json"
-CHANGESET_ID=$(curl -s "$CHANGELOG_URL" | grep -o '"changeset":[^,]*' | head -n 1 | cut -d':' -f2 | tr -d ' "')
-
-if [ -z "$CHANGESET_ID" ]; then
-    echo "Warning: Could not retrieve changeset ID for Unity version ${UNITY_VERSION}."
-else
-    echo "Unity ${UNITY_VERSION} changeset ID: ${CHANGESET_ID}"
+# This is because hub doesnt remember every version of unity and uses the changset for the exact id lookup.
+if [ -z "${UNITY_CHANGESET}" ]; then
+    echo "Warning: No changeset provided. Scraping one from the change logs."
+    echo "This might take a while. Use the UNITY_CHANGESET to avoid this lookup."
+    CHANGELOG_URL="https://unity.com/releases/editor/whats-new/${UNITY_VERSION}"
+    UNITY_CHANGESET=$(curl -s -r 0-500 "$CHANGELOG_URL" | grep -oP 'unityhub://(?:[0-9a-z.])+/\K([a-z0-9]+)' | head -n 1)
+    if [ -z "$UNITY_CHANGESET" ]; then
+        echo "Error: Could not extract changeset for Unity version ${UNITY_VERSION}."
+        exit 1
+    fi
 fi
 
 # Ensure we have some modules
@@ -82,6 +85,8 @@ DEST_TAG=${GAMECI_OS}-${UNITY_VERSION}-runner
 DEST_IMAGE=${IMAGE}:${DEST_TAG}
 
 echo "Building Docker image ${DEST_IMAGE}"
+echo "- Version: ${UNITY_VERSION}"
+echo "- Changeset: ${UNITY_CHANGESET}"
 echo "- Platfrom: ${PLATFORM}"
 echo "- Base: ${BASE_IMAGE}"
 echo "- Tag: ${DEST_TAG}"
@@ -90,11 +95,10 @@ echo "- Image: ${DEST_IMAGE}"
 docker build \
     --platform ${PLATFORM} \
     --build-arg "VERSION=${UNITY_VERSION}" \
+    --build-arg "CHANGESET=${UNITY_CHANGESET}" \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     --build-arg "MODULE=${UNITY_MODULES}" \
-    -t ${DEST_IMAGE} \
-    ${DOCKER_BUILD_ARGS} \
-    .
+    -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} dockerfiles/runner.dockerfile
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker build failed."

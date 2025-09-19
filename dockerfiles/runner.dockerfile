@@ -7,10 +7,9 @@ ARG HUB_IMAGE="unityci/hub"
 FROM $HUB_IMAGE AS builder
 # Install editor
 ARG VERSION
-ARG CHANGE_SET
-RUN unity-hub install --version "$VERSION" --changeset "$CHANGE_SET" | \
-        tee /var/log/install-editor.log && grep 'Failed to install\|Error while installing an editor\|Completed with errors' /var/log/install-editor.log | \
-        exit $(wc -l)
+ARG CHANGESET
+RUN unity-hub install --version "$VERSION" --changeset "$CHANGESET" \
+      | tee /var/log/install-editor.log && grep 'Failed to install\|Error while installing an editor\|Completed with errors' /var/log/install-editor.log | exit $(wc -l)
 
 # Install modules for that editor
 ARG MODULE="non-existent-module"
@@ -35,12 +34,17 @@ RUN echo "$VERSION-$MODULE" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9
   || unity-hub install-modules --version "$VERSION" --module "windows-server" --childModules | \
   tee /var/log/install-module-windows-server.log && grep 'Missing module' /var/log/install-module-windows-server.log | exit $(wc -l);
 
-
-
 ###########################
 #          Editor         #
 ###########################
 FROM $BASE_IMAGE
+
+# Always put "Editor" and "modules.json" directly in $UNITY_PATH
+ARG VERSION
+ARG MODULE
+COPY --from=builder /opt/unity/editors/$VERSION/ "$UNITY_PATH/"
+RUN echo $VERSION > "$UNITY_PATH/version"
+
 RUN apt-get update && \
         apt-get install -y \
         git \
@@ -78,4 +82,4 @@ COPY scripts/build.sh /build.sh
 RUN chmod +x /build.sh 
 
 # Done
-ENTRYPOINT [ "/entrypoint.sh" ]
+# ENTRYPOINT [ "/bin/bash" ]
