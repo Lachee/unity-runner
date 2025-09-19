@@ -85,7 +85,8 @@ docker build \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
     ${ADDITIONAL_TAGS} \
     -t ${FULL_IMAGE} \
-    ${DOCKER_BUILD_ARGS} dockerfiles/individual.dockerfile
+    ${DOCKER_BUILD_ARGS} \
+    -f ./dockerfiles/individual.dockerfile .
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker build failed."

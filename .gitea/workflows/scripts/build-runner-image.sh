@@ -92,13 +92,14 @@ echo "- Base: ${BASE_IMAGE}"
 echo "- Tag: ${DEST_TAG}"
 echo "- Image: ${DEST_IMAGE}"
 
-docker build \
+docker buildx build \
     --platform ${PLATFORM} \
     --build-arg "VERSION=${UNITY_VERSION}" \
     --build-arg "CHANGESET=${UNITY_CHANGESET}" \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     --build-arg "MODULE=${UNITY_MODULES}" \
-    -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} dockerfiles/runner.dockerfile
+    -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} \
+    -f ./dockerfiles/runner.dockerfile .
 
 if [ $? -ne 0 ]; then
     echo "Error: Docker build failed."

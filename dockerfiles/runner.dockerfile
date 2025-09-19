@@ -82,4 +82,4 @@ COPY scripts/build.sh /build.sh
 RUN chmod +x /build.sh 
 
 # Done
-# ENTRYPOINT [ "/bin/bash" ]
+# ENTRYPOINT [ "/bin/bash" ]~
