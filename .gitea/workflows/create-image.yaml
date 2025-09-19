@@ -1,9 +1,9 @@
-name: Create Images
+name: 🤓 Individual Runners
 
 on:    
-  push:
-    branches: [main]
-    paths: ['versions.txt']
+  # push:
+  #   branches: [main]
+  #   paths: ['versions.txt']
 
   workflow_dispatch:
     inputs:

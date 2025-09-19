@@ -1,4 +1,4 @@
-name: Individual Runners
+name: 😎 Uber Runner
 
 on:
   workflow_dispatch:
@@ -6,27 +6,19 @@ on:
     branches: [main]
     paths: 
       - versions.txt
-      - Dockerfile
-      - .github/workflows/create-image.yaml
+      - dockerfiles/runner.dockerfile
+      - .github/workflows/create-runner.yaml
 
 jobs:
   build-docker:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        platform: 
-          - webgl
-          - android
-          - ios
-          - mac-mono
-          - windows-mono
-          - linux-il2cpp
-        
-    name: Build 🐳 ${{ matrix.platform }}
+    env:
+      UNITY_MODULES: webgl android ios mac-mono windows-mono linux-il2cpp
+      
     environment:
       name: Docker Hub
 
+    name: Build
     steps:
       - uses: actions/checkout@v4
 
@@ -43,13 +35,14 @@ jobs:
           echo "Unity Version: $VERSION"
 
       - name: Docker Build
-        run: .gitea/workflows/scripts/build-individual-image.sh
+        run: .gitea/workflows/scripts/build-runner-image.sh
         id: build-image
         env:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
-          UNITY_PLATFORM: ${{ matrix.platform }}
-          IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
+          UNITY_MODULES: ${{ env.UNITY_MODULES }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+          GAMECI_OS: ubuntu
+          IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
 
       - name: Docker Push
         run: |
