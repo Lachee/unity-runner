@@ -7,7 +7,8 @@ on:
       - versions.txt
       - dockerfiles/runner.dockerfile
       - .github/workflows/create-runner.yaml
-
+  workflow_dispatch:
+  
 jobs:
   build-docker:
     runs-on: ubuntu-latest
