@@ -108,14 +108,13 @@ def main():
     tags.sort()
 
     versions={}
-
-    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)(-\w+)?-runner")
+    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)-(\w+)?(-\w+)?-runner")
     for tag in tags:
         matches = pattern.match(tag)
         if matches:
             groups = matches.groups()
             version = groups[1]
-            component = groups[2]
+            component = groups[2] if groups[2] else "all"
             if groups[3]:  # If there is a variance, then apply it to the component
                 component = f"{component} ({groups[3].strip('-')})"
 
