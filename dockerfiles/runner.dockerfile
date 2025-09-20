@@ -14,15 +14,15 @@ COPY --from=editor "$UNITY_PATH/" /opt/unity/editors/$VERSION/
 # Install modules for that editor
 ARG MODULE="non-existent-module"
 RUN for mod in $MODULE; do \
-      if [ "$mod" = "base" ] ; then \
-        echo "running default modules for this baseOs"; \
-      else \
-        unity-hub install-modules --version "$VERSION" --module "$mod" --childModules | tee /var/log/install-module-${mod}.log && \
-        grep 'Missing module\|Completed with errors' /var/log/install-module-${mod}.log | exit $(wc -l); \
-      fi \
-    done \
-	# Set execute permissions for modules
-	&& chmod -R 755 /opt/unity/editors/$VERSION/Editor/Data/PlaybackEngines
+  if [ "$mod" = "base" ] ; then \
+  echo "running default modules for this baseOs"; \
+  else \
+  unity-hub install-modules --version "$VERSION" --module "$mod" --childModules | tee /var/log/install-module-${mod}.log && \
+  grep 'Missing module\|Completed with errors' /var/log/install-module-${mod}.log | exit $(wc -l); \
+  fi \
+  done \
+  # Set execute permissions for modules
+  && chmod -R 755 /opt/unity/editors/$VERSION/Editor/Data/PlaybackEngines
 
 RUN echo "$VERSION-$MODULE" | grep -q -vP '^(2021.2.(?![0-4](?![0-9]))|2021.[3-9]|202[2-9]|[6-9][0-9]{3}|[1-9][0-9]{4,}).*linux' \
   && exit 0 \
@@ -46,40 +46,45 @@ COPY --from=builder /opt/unity/editors/$VERSION/ "$UNITY_PATH/"
 RUN echo $VERSION > "$UNITY_PATH/version"
 
 RUN apt-get update && \
-        apt-get install -y \
-        git \
-        curl \
-        gcc \
-        make \
-        libssl-dev \
-        zlib1g-dev \
-        libsqlite3-dev
+  apt-get install -y \
+  git \
+  curl \
+  gcc \
+  make \
+  libssl-dev \
+  zlib1g-dev \
+  libsqlite3-dev
 
 # Set up the scripts
 RUN git clone --depth=1 https://github.com/game-ci/unity-builder.git /gameci && \
-        cp -rf /gameci/dist/platforms/ubuntu/steps /steps && \
-        cp -rf /gameci/dist/default-build-script /UnityBuilderAction && \
-        cp /gameci/dist/platforms/ubuntu/entrypoint.sh /entrypoint.sh
+  cp -rf /gameci/dist/platforms/ubuntu/steps /steps && \
+  cp -rf /gameci/dist/default-build-script /UnityBuilderAction && \
+  cp /gameci/dist/platforms/ubuntu/entrypoint.sh /entrypoint.sh
 
 # Set up Node.js environment for github actions
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-        apt-get install -y nodejs && \
-        npm install -g npm@latest
+  apt-get install -y nodejs && \
+  npm install -g npm@latest
 
 # Install Blender
 ARG BLENDER_SHORT_VERSION=3.4
 ARG BLENDER_FULL_VERSION=3.4.1
 RUN echo "BLENDER_FULL_VERSION: $BLENDER_FULL_VERSION" && \
-        echo echo "BLENDER_SHORT_VERSION: $BLENDER_SHORT_VERSION" && \
-        apt-get install -y wget && \
-        wget https://download.blender.org/release/Blender$BLENDER_SHORT_VERSION/blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
-        tar -xf blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
-        rm blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz
+  echo echo "BLENDER_SHORT_VERSION: $BLENDER_SHORT_VERSION" && \
+  apt-get install -y wget && \
+  wget https://download.blender.org/release/Blender$BLENDER_SHORT_VERSION/blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
+  tar -xf blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
+  rm blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz
 ENV PATH="$PATH:/blender-$BLENDER_FULL_VERSION-linux-x64"
 
 # Add custom scripts
 COPY scripts/build.sh /build.sh
 RUN chmod +x /build.sh 
 
+LABEL com.unity3d.version="$VERSION"
+LABEL com.unity3d.modules="$MODULE"
+LABEL org.blender.version="$BLENDER_FULL_VERSION"
+
 # Done
+ENTRYPOINT [ "/entrypoint.sh" ]
 # ENTRYPOINT [ "/bin/bash" ]~
