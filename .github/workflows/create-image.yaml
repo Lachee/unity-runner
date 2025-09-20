@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths: 
       - versions.txt
-      - Dockerfile
+      - dockerfiles/runner.dockerfile
       - .github/workflows/create-image.yaml
 
 jobs:
@@ -17,6 +17,7 @@ jobs:
       GAMECI_VERSION: 3
 
     strategy:
+      max-parallel: 2
       matrix:
         platform: 
           - webgl

@@ -6,7 +6,7 @@ on:
     paths: 
       - versions.txt
       - dockerfiles/runner.dockerfile
-      - .gitea/workflows/create-runner.yaml
+      - .gitea/workflows/create-image.yaml
 
   workflow_dispatch:
     inputs:
@@ -39,6 +39,7 @@ jobs:
       GAMECI_VERSION: 3
 
     strategy:
+      max-parallel: 2
       matrix:
         platform: 
           - webgl
