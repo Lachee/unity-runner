@@ -4,12 +4,12 @@ ARG HUB_IMAGE="unityci/hub"
 ###########################
 #         Builder         #
 ###########################
+FROM $BASE_IMAGE AS editor
 FROM $HUB_IMAGE AS builder
+
 # Install editor
 ARG VERSION
-ARG CHANGESET
-RUN unity-hub install --version "$VERSION" --changeset "$CHANGESET" \
-      | tee /var/log/install-editor.log && grep 'Failed to install\|Error while installing an editor\|Completed with errors' /var/log/install-editor.log | exit $(wc -l)
+COPY --from=editor "$UNITY_PATH/" /opt/unity/editors/$VERSION/ 
 
 # Install modules for that editor
 ARG MODULE="non-existent-module"
