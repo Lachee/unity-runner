@@ -6,7 +6,7 @@ on:
     paths: 
       - versions.txt
       - dockerfiles/runner.dockerfile
-      - .github/workflows/create-runner.yaml
+      - .gitea/workflows/create-runner.yaml
 
   workflow_dispatch:
   
