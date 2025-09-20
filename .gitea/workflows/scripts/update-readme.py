@@ -1,165 +1,136 @@
-#!/usr/bin/env python3
-
-import requests
-import sys
 import os
 import re
+import requests
+import base64
+import json
 
-def get_docker_hub_tags(repository, limit=1000):
-    """
-    Get tags for a Docker Hub repository
-    """
-    url = f"https://hub.docker.com/v2/repositories/{repository}/tags"
-    params = {"page_size": limit}
+DOCKER_REGISTRY = os.getenv('DOCKER_REGISTRY')
+DOCKER_USERNAME = os.getenv('DOCKER_USERNAME')
+DOCKER_PASSWORD = os.getenv('DOCKER_PASSWORD')
+IMAGE =  os.getenv('IMAGE')
+
+README_PATH="README.md"
+DOCKERHUB_REGISTRY = "registry-1.docker.io"
+
+def format_bytes(size_bytes : int) -> str:
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_bytes < 1024.0:
+            human_size = f"{size_bytes:.2f} {unit}"
+            break
+        size_bytes /= 1024.0
+    return human_size
     
-    # Check for Docker Hub credentials in environment variables
-    username = os.getenv('DOCKER_USERNAME')
-    password = os.getenv('DOCKER_PASSWORD')
-    
-    # Create session for potential authentication
-    session = requests.Session()
-    
-    # Authenticate if credentials are provided
+def get_tags_with_size(registry : str, authorization : str, repository : str) -> list[object]:
+    url = f"https://{registry}/v2/{repository}/tags/list"
+    headers = {
+        "Authorization": f"{authorization}",
+        "Accept": "application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"
+    }
+
+    print(f"Querying {url}...")
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    all_tags = resp.json()['tags']
+    tags = []
+    for t in all_tags:
+        url = f"https://{registry}/v2/{repository}/manifests/{t}"
+        print(f"- {t} looking up {url}...")
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+        layers = resp.json()['layers']
+        tag = {}
+        tag['name'] = t
+        tag['registry'] = registry
+        tag['size'] = sum(layer['size'] for layer in  layers)
+        tag['layers'] = layers
+        tags.append(tag)
+
+    return tags
+
+def login_dockerhub(username : str, password : str, forRepository : str) -> str:
+    # Get token for Docker Hub API
+    auth_url = "https://auth.docker.io/token"
+    service = "registry.docker.io"
+    scope = f"repository:{forRepository}:pull"
+    params = {"service": service, "scope": scope}
     if username and password:
-        auth_url = "https://hub.docker.com/v2/users/login/"
-        auth_data = {"username": username, "password": password}
-        
-        try:
-            auth_response = session.post(auth_url, json=auth_data)
-            auth_response.raise_for_status()
-            # Token is automatically stored in the session cookies
-        except requests.exceptions.RequestException as e:
-            print(f"Warning: Docker Hub authentication failed: {e}")
-            # Continue without authentication
-    
-    all_tags = []
-    
-    while url:
-        response = session.get(url, params=params)
-        if response.status_code != 200:
-            print(f"Error: Unable to fetch tags. Status code: {response.status_code}")
-            print(f"Response: {response.text}")
-            sys.exit(1)
-        
-        data = response.json()
-        all_tags.extend([tag["name"] for tag in data["results"]])
-        
-        # Get next page URL if it exists
-        url = data.get("next")
-        # Clear params since the next URL already includes them
-        params = {}
-        
-    return all_tags
-
-def get_private_registry_tags(registry, repository):
-    """
-    Get tags for a repository in a private registry
-    """
-    # Check for registry credentials in environment variables
-    username = os.getenv('DOCKER_USERNAME')
-    password = os.getenv('DOCKER_PASSWORD')
-    
-    # Ensure registry URL starts with https://
-    registry_url = registry if registry.startswith(('http://', 'https://')) else f'https://{registry}'
-
-    # Try to get an auth token first (token-based auth)
-    headers = {}
-    url = f"{registry_url}/v2/{repository}/tags/list"
-    
-    # Make the request with appropriate authentication
-    if username and password:
-        # Use basic auth if we have credentials but no token
-        response = requests.get(url, headers=headers, auth=(username, password))
+        resp = requests.get(auth_url, params=params, auth=(username, password))
     else:
-        # Use token auth or no auth
-        response = requests.get(url, headers=headers)
+        resp = requests.get(auth_url, params=params)
+    resp.raise_for_status()
+    token = resp.json()["token"]
+    return f"Bearer {token}"
+
+def login_registry(username : str, password : str) -> str:
+    credentials = f"{username}:{password}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    return f"Basic {encoded_credentials}"
+
+def create_label(repository: str, tag : object) -> str:
+    name = tag['name']
+    registry = tag['registry']
+    size = format_bytes(tag['size'])
+    link = f"https://{registry}/repo/{repository}/tag/{name}"
+    if registry == DOCKERHUB_REGISTRY:
+        link = f"https://hub.docker.com/layers/{repository}/{name}"
+    return f"[🐳 View]({link})<br>📦 {size}"
+
+def create_table(repository : str, tags : list[object]) -> str:
+    markdown : str = ""
     
-    if response.status_code != 200:
-        print(f"Error: Unable to fetch tags. Status code: {response.status_code}")
-        print(f"Response: {response.text}")
-        sys.exit(1)
-    
-    data = response.json()
-    return data.get("tags", [])
+    versions : dict[str, dict[str, str]] = {}
+    all_modules : set[str] = set()
 
-def format_tag(registry, repository, platform, tag ):
-    # Get color for platform, default to blue if not found
-    url = f"https://hub.docker.com/r/{repository}/tags?name={tag}"
+    # Build a table of versions
+    pattern = re.compile(r"(?P<os>\w+)(?P<version>-\d+\.\d+\.\d+\w*)(?P<modules>-[a-zA-Z-0-9]+)?-runner")
+    for tag in tags:
+        matches = pattern.match(tag['name'])
+        os = matches.group("os").strip('-')
+        version = matches.group("version").strip('-')
+        modules = matches.group("modules").strip('-') if matches.group('modules') else "all"
+        all_modules.add(modules)
+        if version not in versions:
+            versions[version] = {}
+        versions[version][modules] = create_label(repository, tag)
 
-    if registry:
-        url = f"https://{registry}/{repository}/tag/{tag}"
+    # Print the table heading
+    sorted_mods = sorted([m for m in all_modules if m])
+    markdown += f"|Unity|{'|'.join(sorted_mods)}|\n"
+    markdown += f"|-----|{'|'.join('-' * len(m) for m in sorted_mods)}|\n"
 
-    return f"[🐳 View]({url})"
+    # For each item, check each available module and see if this version has that available.
+    for ver, mods in versions.items():
+        row = [ mods[mod] if mod in mods else '❌' for mod in sorted_mods ]
+        markdown += f"|{ver}|{'|'.join(row)}|\n"
+
+    return markdown
+
+def replace_readme_table(readme : str, table : str) -> str:
+    pattern = r"(<!-- table -->).*(<!-- /table -->)"
+    return re.sub(pattern, r'\1\n' + table + r'\2', readme, flags=re.DOTALL)
 
 def main():
-    
-    # Check for registry in environment variable if not specified in args
-    registry = os.getenv('DOCKER_REGISTRY')
-    repository = os.getenv('IMAGE')
+    auth_token : str
+    registry : str
 
-    if registry:
-        print(f"Fetching tags for {repository} from {registry}...")
-        tags = get_private_registry_tags(registry, repository)
+    if DOCKER_REGISTRY:
+        registry = DOCKER_REGISTRY
+        auth_token = login_registry(DOCKER_USERNAME, DOCKER_PASSWORD)
     else:
-        print(f"Fetching tags for {repository} from Docker Hub...")
-        tags = get_docker_hub_tags(repository, 100)
-    
-    # Sort tags
-    tags.sort()
+        registry = DOCKERHUB_REGISTRY
+        auth_token = login_dockerhub(DOCKER_USERNAME, DOCKER_PASSWORD, IMAGE)
 
-    versions={}
+    print('Fetching Tags...')
+    tags = get_tags_with_size(registry, auth_token, IMAGE)
 
-    pattern = re.compile(r"(\w+)-(\d+\.\d+\.\d+\w*)(-[a-zA-Z-0-9]+)?-runner")
-    for tag in tags:
-        matches = pattern.match(tag)
-        if matches:
-            groups = matches.groups()
-            version = groups[1]
-            component = groups[2] if groups[2] else "all"
-            component = component.strip('-')
-            if version not in versions:
-                versions[version] = {}
-            versions[version][component] = tag
+    print('Writing Readme...')
+    table = create_table(IMAGE, tags)
+    if os.path.exists(README_PATH):
+        with open(README_PATH, "r", encoding='utf-8') as f:
+            readme = f.read()
+        with open(README_PATH, "w", encoding='utf-8') as f:
+            f.write(replace_readme_table(readme, table))
 
-    # Get all unique components across all versions
-    print(versions)
-    all_components = set()
-    for version_components in versions.values():
-        all_components.update(version_components.keys())
-    all_components = sorted(list(all_components))
-
-    # Create markdown table header with components as columns
-    markdown = "| unity |"
-    for component in all_components:
-        markdown += f" {component} |"
-    markdown += "\n|---------|" + "----------|" * len(all_components) + "\n"
-
-    for version in sorted(versions.keys()):
-        markdown += f"| {version} |"
-        for component in all_components:
-            tag = versions[version].get(component, "")
-            if tag:
-                markdown += format_tag(registry, repository, component, tag) + " |"
-            else:
-                markdown += "❌ N/A |"
-        markdown += "\n"
-
-    # Read existing README.md
-    print("Updating README")
-    readme_path = "README.md"
-    if os.path.exists(readme_path):
-        with open(readme_path, 'r') as f:
-            content = f.read()
-        
-        # Replace content between markers
-        pattern = r'(<!-- table -->).*(<!-- /table -->)'
-        new_content = re.sub(pattern, r'\1\n' + markdown + r'\2', content, flags=re.DOTALL)
-        
-        # Write back to README.md
-        with open(readme_path, 'w') as f:
-            f.write(new_content)
-
-    print("Done!")
 
 if __name__ == "__main__":
     main()
