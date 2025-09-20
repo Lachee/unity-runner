@@ -3,7 +3,7 @@ name: Update README with Docker Images
 on:
   workflow_dispatch:      # Allow manual triggering
   workflow_run:           # Trigger from images
-    workflows: ["Create Images"]
+    workflows: ["Individual Runners", "😎 Uber Runner"]
     types: [completed]
   push:
     paths:
