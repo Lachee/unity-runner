@@ -7,6 +7,7 @@ on:
       - versions.txt
       - dockerfiles/runner.dockerfile
       - .github/workflows/create-runner.yaml
+
   workflow_dispatch:
   
 jobs:
@@ -15,6 +16,7 @@ jobs:
     env:
       DOCKER_REGISTRY: docker.lakes.house/
       UNITY_MODULES: webgl android ios mac-mono windows-mono linux-il2cpp
+      GAMECI_OS: ubuntu
       GAMECI_VERSION: 3
       
     name: Build
@@ -40,8 +42,9 @@ jobs:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
           UNITY_MODULES: ${{ env.UNITY_MODULES }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
-          GAMECI_OS: ubuntu
+          GAMECI_OS: ${{ env.GAMECI_OS }}
           IMAGE: ${{ env.DOCKER_REGISTRY }}unityci/editor
+          TAG: ${{ env.GAMECI_OS }}-${{ env.UNITY_VERSION }}-runner
 
       - name: Docker Push
         run: |

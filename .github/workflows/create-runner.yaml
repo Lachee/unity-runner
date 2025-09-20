@@ -14,7 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       UNITY_MODULES: webgl android ios mac-mono windows-mono linux-il2cpp
-      
+      GAMECI_OS: ubuntu
+      GAMECI_VERSION: 3
+
     environment:
       name: Docker Hub
 
@@ -41,8 +43,9 @@ jobs:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
           UNITY_MODULES: ${{ env.UNITY_MODULES }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
-          GAMECI_OS: ubuntu
+          GAMECI_OS: ${{ env.GAMECI_OS }}
           IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
+          TAG: ${{ env.GAMECI_OS }}-${{ env.UNITY_VERSION }}-runner
 
       - name: Docker Push
         run: |
