@@ -50,7 +50,7 @@ jobs:
         id: build-image
         env:
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
-          UNITY_PLATFORM: ${{ matrix.platform }}
+          UNITY_MODULES: ${{ matrix.platform }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
           GAMECI_OS: ${{ env.GAMECI_OS }}
           IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
