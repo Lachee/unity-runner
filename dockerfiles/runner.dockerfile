@@ -13,7 +13,7 @@ COPY --from=editor "$UNITY_PATH/" /opt/unity/editors/$VERSION/
 
 # Install CMake
 RUN apt-get update && apt-get install -y cmake
-COPY scripts/install-module.sh /bin/install-module
+COPY --chmod=770 scripts/install-module.sh /bin/install-module
 
 # Install modules for that editor
 ARG MODULE
