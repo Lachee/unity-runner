@@ -58,3 +58,26 @@ A table of available Docker images for Unity CI/CD:
 ...
 TODO
 ...
+
+> [!NOTE]
+> Depending on your size of project, you might find it would randomly fail. This is likely your gitea-runner running out of memory and terminating. 
+> I personally found proxmox did this a lot as the memory grew faster than what the host could balloon. I recommend setting 4GB **MIN** so it always has space to balloon.
+
+> [!TIP]
+> I run a 10GB VM with 500GB just for Unity3D builds. I have a custom `unity` label to prevent my other runners getting builds.
+
+## Uber Image?
+There is a experimental UberRunner.dockerfile. However there have been some issues trying to build and host it:
+- The image is **MASSIVE**, totally around 25GB for a single docker image.
+  - Unless you precache the image on your runners, it would take a long time downloading each run
+- It requires a lot of memory and storage to build
+  - GitHub runners cannot build it, they run out of storage
+  - My upload speed is terrible, so i cannot upload them
+  - Runners tend to run out of memory and kill the process. I had to dedicate building it to my "-large" runners (with 10GB memory & 500GB storage).
+- Android requires additional steps so you just end up reinventing the wheel.
+- There is no point?
+  - Sure you only need one image, but you still have the same storage concerns than lots of smaller images
+  - Let docker be smart and cache the layers. Didn't need to make a mega bundle just for better caching
+  - If you need everything / weird setups, just run in [`host`](https://docs.gitea.com/usage/actions/act-runner#labels) mode with unity pre-installed on a VM.
+    - It would cache everything for you too! 
+    - Less hassle having to deal with licensing.
