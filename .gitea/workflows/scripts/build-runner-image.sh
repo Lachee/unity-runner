@@ -103,7 +103,7 @@ echo "- Source Registry: ${SRC_REGISTRY}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${DEST_IMAGE}"
 
-docker buildx build \
+docker build \
     --platform ${PLATFORM} \
     --build-arg "VERSION=${UNITY_VERSION}" \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
