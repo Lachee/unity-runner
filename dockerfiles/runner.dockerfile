@@ -1,11 +1,11 @@
-ARG BASE_IMAGE=unityci/editor
-ARG HUB_IMAGE="unityci/hub"
+ARG BASE_OS=ubuntu
+ARG VERSION=2023.1.0f1
 
 ###########################
 #         Builder         #
 ###########################
-FROM $BASE_IMAGE AS editor
-FROM $HUB_IMAGE AS builder
+FROM unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
+FROM unityci/hub AS builder
 
 # Install editor
 ARG VERSION
@@ -38,64 +38,98 @@ RUN install-module "$VERSION" "$MODULE" windows-server
 ###########################
 #          Editor         #
 ###########################
-FROM $BASE_IMAGE
+FROM $BASE_OS:latest
+
+WORKDIR /tmp
+
+ENV UNITY_PATH="/opt/unity"
 
 # Always put "Editor" and "modules.json" directly in $UNITY_PATH
 ARG VERSION
 ARG MODULE
 COPY --from=builder /opt/unity/editors/$VERSION/ "$UNITY_PATH/"
 RUN echo $VERSION > "$UNITY_PATH/version"
+LABEL com.unity3d.version="$VERSION"
+LABEL com.unity3d.modules="$MODULE"
 
-# Tools
+# == System Packages ==
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-  apt-get install -y \
-  build-essential \
-  cmake \
-  curl \
-  gcc \
-  git \
-  libsqlite3-dev \
-  libssl-dev \
-  make \
-  pkg-config \
-  zlib1g-dev \
-  zip unzip
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ca-certificates \
+        curl \
+        bash \
+        git \
+        libsqlite3-dev \
+        libssl-dev \
+        pkg-config \
+        unzip \
+        wget \
+        zip  \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates;
 
-ARG BLENDER_SHORT_VERSION=3.4
-ARG BLENDER_FULL_VERSION=3.4.1
-RUN echo "BLENDER_FULL_VERSION: $BLENDER_FULL_VERSION" && \
-  echo echo "BLENDER_SHORT_VERSION: $BLENDER_SHORT_VERSION" && \
-  apt-get install -y wget && \
-  wget https://download.blender.org/release/Blender$BLENDER_SHORT_VERSION/blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
-  tar -xf blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz && \
-  rm blender-$BLENDER_FULL_VERSION-linux-x64.tar.xz
-ENV PATH="$PATH:/blender-$BLENDER_FULL_VERSION-linux-x64"
+# == Runtimes, Languages, & Package Managers ==
+# - Node
+ARG NODE_VERSION=20
+LABEL org.nodejs.version="${NODE_VERSION}"
+ENV NVM_DIR=/root/.nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash; \
+    . "$NVM_DIR/nvm.sh"; \
+    nvm install ${NODE_VERSION}; \
+    nvm alias default ${NODE_VERSION}; \
+    node -v; \
+    corepack enable; \
+    pnpm -v
+ENV PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin:$PATH"
+# - Python 3
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Runtimes, Languages, & Package Managers
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-  apt-get install -y nodejs && npm install -g npm@latest
-RUN curl -fsSL https://get.pnpm.io/install.sh | bash -
-RUN apt-get install -y python3 python3-pip
-
-
-# SDKs
-RUN cd /tmp && curl -sL https://aka.ms/InstallAzureCLIDeb | bash
-RUN cd /tmp && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+# == SDKs ==
+# - Azure
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+# - AWS
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && ./aws/install
 
+# == Tools ==
+# - Blender
+ARG BLENDER_SHORT_VERSION=3.4
+ARG BLENDER_FULL_VERSION=3.4.1
+LABEL org.blender.version="${BLENDER_FULL_VERSION}"
+RUN set -eux; \
+    mkdir -p /opt/blender; \
+    wget -O /tmp/blender.tar.xz "https://download.blender.org/release/Blender${BLENDER_SHORT_VERSION}/blender-${BLENDER_FULL_VERSION}-linux-x64.tar.xz"; \
+    tar -xJf /tmp/blender.tar.xz -C /opt/blender; \
+    rm /tmp/blender.tar.xz; \
+    ln -sf "/opt/blender/blender-${BLENDER_FULL_VERSION}-linux-x64/blender" /usr/local/bin/blender; \
+    ls -al /opt/blender
+ENV PATH="/opt/blender/blender-${BLENDER_FULL_VERSION}-linux-x64:${PATH}"
 
-# Scripts
+# - Butler
+RUN curl -L https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default -o butler.zip \
+ && unzip butler.zip -d /opt/butler \
+ && chmod +x /opt/butler/butler \
+ && ln -s /opt/butler/butler /usr/local/bin/butler \
+ && rm butler.zip
+
+# == Scripts ==
+# - GameCI
 RUN git clone --depth=1 https://github.com/game-ci/unity-builder.git /gameci && \
   cp -rf /gameci/dist/platforms/ubuntu/steps /steps && \
   cp -rf /gameci/dist/default-build-script /UnityBuilderAction && \
   cp /gameci/dist/platforms/ubuntu/entrypoint.sh /entrypoint.sh
+# - Build Helper
+COPY --chmod=774 scripts/build.sh /build.sh
 
-COPY scripts/build.sh /build.sh
-RUN chmod +x /build.sh 
-
-LABEL com.unity3d.version="$VERSION"
-LABEL com.unity3d.modules="$MODULE"
-LABEL org.blender.version="$BLENDER_FULL_VERSION"
+# == Cleanup ==
+WORKDIR /workspace
+RUN rm -rf /tmp
 
 # Done
 # ENTRYPOINT [ "/entrypoint.sh" ]

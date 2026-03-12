@@ -1,13 +1,6 @@
 name: 😎 Uber Runner
 
 on:    
-  push:
-    branches: [main]
-    paths: 
-      - versions.txt
-      - dockerfiles/runner.dockerfile
-      - .gitea/workflows/create-runner.yaml
-
   workflow_dispatch:
   
 jobs:
