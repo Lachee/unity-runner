@@ -129,4 +129,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          docker system prune -f
+          docker system prune -a -f
