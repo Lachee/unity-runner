@@ -72,6 +72,7 @@ jobs:
             docker://${{ env.DOCKER_REGISTRY }}/unityci/editor:${TAG}
 
 
+
   build:
     runs-on: ubuntu-latest
     needs: [ precache ]
@@ -127,3 +128,8 @@ jobs:
             echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"
             echo "- Tag: ${{ steps.build-image.outputs.TAG }}"
             docker push ${{ steps.build-image.outputs.FULL_IMAGE }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker images prune -f
