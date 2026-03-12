@@ -91,7 +91,7 @@ jobs:
     if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform }}
     steps:
       - uses: actions/checkout@v6
-        
+
       - name: Get Unity Version
         if: ${{ github.event.inputs.unity_version == '' }}
         run: |
@@ -111,13 +111,13 @@ jobs:
         run: .gitea/workflows/scripts/build-runner-image.sh
         id: build-image
         env:
-          UNITY_VERSION: ${{ env.UNITY_VERSION }}
-          UNITY_MODULES: ${{ matrix.platform }}
-          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
+          EDITOR_CACHE_REGISTRY: ${{ env.DOCKER_REGISTRY }}
           GAMECI_OS: ${{ env.GAMECI_OS }}
+          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
           IMAGE: ${{ env.DOCKER_REGISTRY }}/unityci/editor
-          SRC_REGISTRY: ${{ env.DOCKER_REGISTRY }}
           TAG: ${{ env.GAMECI_OS }}-${{ env.UNITY_VERSION }}-${{ matrix.platform }}-runner
+          UNITY_MODULES: ${{ matrix.platform }}
+          UNITY_VERSION: ${{ env.UNITY_VERSION }}
 
       - name: Docker Push
         run: |

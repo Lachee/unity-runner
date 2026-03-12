@@ -1,12 +1,12 @@
 ARG BASE_OS=ubuntu
 ARG VERSION=2023.1.0f1
-ARG SRC_REGISTRY=docker.io
+ARG EDITOR_CACHE_REGISTRY=docker.io
 
 ###########################
 #         Builder         #
 ###########################
-FROM ${SRC_REGISTRY}/unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
-FROM ${SRC_REGISTRY}/unityci/hub AS builder
+FROM ${EDITOR_CACHE_REGISTRY}/unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
+FROM unityci/hub AS builder
 
 # Install editor
 ARG VERSION

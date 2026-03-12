@@ -52,8 +52,8 @@ if [ -z "${GAMECI_OS}" ]; then
 fi
 
 # Ensure there is a base registry
-if [ -z "${SRC_REGISTRY}" ]; then
-    SRC_REGISTRY="docker.io"
+if [ -z "${EDITOR_CACHE_REGISTRY}" ]; then
+    EDITOR_CACHE_REGISTRY="docker.io"
 fi
 
 # Ensure PLATFORM is set, default to the current system if not
@@ -99,7 +99,7 @@ echo "- Version: ${UNITY_VERSION}"
 echo "- Changeset: ${UNITY_CHANGESET}"
 echo "- Platfrom: ${PLATFORM}"
 echo "- Base: ${BASE_IMAGE}"
-echo "- Source Registry: ${SRC_REGISTRY}"
+echo "- Reditor Cache Registry: ${EDITOR_CACHE_REGISTRY}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${DEST_IMAGE}"
 
@@ -108,7 +108,7 @@ docker build \
     --build-arg "VERSION=${UNITY_VERSION}" \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     --build-arg "MODULE=${UNITY_MODULES}" \
-    --build-arg "SRC_REGISTRY=${SRC_REGISTRY}" \
+    --build-arg "EDITOR_CACHE_REGISTRY=${EDITOR_CACHE_REGISTRY}" \
     -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} \
     -f ./dockerfiles/runner.dockerfile .
 
