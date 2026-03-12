@@ -29,15 +29,52 @@ on:
           - windows-mono
           - linux-il2cpp
 
-jobs:
-  build-docker:
-    runs-on: ubuntu-latest
-    env:
-      DOCKER_REGISTRY: docker.lakes.house/
-      UNITY_VERSION: ${{ github.event.inputs.unity_version }}
-      GAMECI_OS: ubuntu
-      GAMECI_VERSION: 3
+env:
+  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY != '' && vars.DOCKER_REGISTRY || 'docker.io' }}
+  UNITY_VERSION: ${{ github.event.inputs.unity_version }}
+  GAMECI_OS: ubuntu
+  GAMECI_VERSION: 3
 
+
+jobs:
+  precache:
+    runs-on: ubuntu-latest
+    name: 📦️ Mirror GameCI's Unity editor
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: versions.txt
+
+      - name: Get Unity Version
+        if: ${{ github.event.inputs.unity_version == '' }}
+        run: |
+          VERSION=$(head -n 1 versions.txt)
+          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Unity Version: $VERSION"
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
+      - name: Cache Base Image
+        run: |
+          set -eux
+          skopeo login --tls-verify=false \
+            --username "${{ secrets.DOCKER_USERNAME }}" \
+            --password "${{ secrets.DOCKER_PASSWORD }}" \
+            ${{ env.DOCKER_REGISTRY }}
+          
+          TAG="${GAMECI_OS}-${UNITY_VERSION}-base-${GAMECI_VERSION}"
+          skopeo copy \
+            --dest-tls-verify=false \
+            docker://docker.io/unityci/editor:${TAG} \
+            docker://${{ env.DOCKER_REGISTRY }}/unityci/editor:${TAG}
+
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [ precache ]
     strategy:
       max-parallel: 2
       matrix:
@@ -52,22 +89,25 @@ jobs:
     name: Build 🐳 ${{ matrix.platform }}
     if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform }}
     steps:
+      - uses: actions/checkout@v6
 
-      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - name: Login to Docker Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          
       - name: Get Unity Version
         if: ${{ github.event.inputs.unity_version == '' }}
         run: |
           VERSION=$(head -n 1 versions.txt)
           echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
           echo "Unity Version: $VERSION"
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        if: ${{ secrets.DOCKER_USERNAME != '' }}
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Docker Build
         run: .gitea/workflows/scripts/build-runner-image.sh
@@ -77,7 +117,8 @@ jobs:
           UNITY_MODULES: ${{ matrix.platform }}
           GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
           GAMECI_OS: ${{ env.GAMECI_OS }}
-          IMAGE: ${{ env.DOCKER_REGISTRY }}unityci/editor
+          IMAGE: ${{ env.DOCKER_REGISTRY }}/unityci/editor
+          SRC_REGISTRY: ${{ env.DOCKER_REGISTRY }}
           TAG: ${{ env.GAMECI_OS }}-${{ env.UNITY_VERSION }}-${{ matrix.platform }}-runner
 
       - name: Docker Push

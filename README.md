@@ -30,25 +30,29 @@ A table of available Docker images for Unity CI/CD:
 ### Tools
 - Unity3D (as `unity-editor`)
 - Blender `3.4`
+- [Butler](https://itchio.itch.io/butler)
+
+### Packages
+- Build Essentials
 - CMake
-- CURL
-- GCC
+- cURL
 - Git
-- Make
-- Zip & Unzip
+- libsqlite3
+- libssl
+- unzip
+- wget
+- zip
+- zlib1f-dev
 
 ### Language and Runtime
-- Bash `5.1.16(1)-release`
-- Node.js `20.19.5`
-- Python3 `3.10.12`
-- lib-sqlite3
-- libssl
-
+- Bash
+- Node.js (`v20`)
+- Python 3
+- 
 ### Package Management
-- NPM `11.6.0`
-- PNPM `10.17.0`
-- pip3 `22.0.2`
-
+- NPM
+- PNPM
+- pip3
 
 ### SDKs
 - AWS CLI

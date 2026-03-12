@@ -4,12 +4,8 @@ on:
   schedule:
     - cron: '0 0 * * *'   # Run daily at midnight
   workflow_dispatch:      # Allow manual triggering
-  workflow_run:           # Trigger from images
-    types: [completed]
-  push:
-    paths:
-      - .gitea/workflows/update-readme.yaml
-      - .gitea/workflows/scripts/update-readme.py
+#  workflow_run:           # Trigger from images
+#    types: [completed]
       
 jobs:
   update-readme:

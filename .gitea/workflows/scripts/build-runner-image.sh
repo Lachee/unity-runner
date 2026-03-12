@@ -51,6 +51,11 @@ if [ -z "${GAMECI_OS}" ]; then
     # Might be worth just putting this in the strategy at this point
 fi
 
+# Ensure there is a base registry
+if [ -z "${SRC_REGISTRY}" ]; then
+    SRC_REGISTRY="docker.io"
+fi
+
 # Ensure PLATFORM is set, default to the current system if not
 if [ -z "${PLATFORM}" ]; then
     PLATFORM=$(uname -m)
@@ -94,14 +99,16 @@ echo "- Version: ${UNITY_VERSION}"
 echo "- Changeset: ${UNITY_CHANGESET}"
 echo "- Platfrom: ${PLATFORM}"
 echo "- Base: ${BASE_IMAGE}"
+echo "- Source Registry: ${SRC_REGISTRY}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${DEST_IMAGE}"
 
-docker build \
+docker buildx build \
     --platform ${PLATFORM} \
     --build-arg "VERSION=${UNITY_VERSION}" \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     --build-arg "MODULE=${UNITY_MODULES}" \
+    --build-arg "SRC_REGISTRY=${SRC_REGISTRY}" \
     -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} \
     -f ./dockerfiles/runner.dockerfile .
 

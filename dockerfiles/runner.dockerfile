@@ -1,18 +1,28 @@
 ARG BASE_OS=ubuntu
 ARG VERSION=2023.1.0f1
+ARG BASE_REGISTRY=docker.io
 
 ###########################
 #         Builder         #
 ###########################
-FROM unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
-FROM unityci/hub AS builder
+FROM ${BASE_REGISTRY}/unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
+FROM ${BASE_REGISTRY}/unityci/hub AS builder
 
 # Install editor
 ARG VERSION
 COPY --from=editor "$UNITY_PATH/" /opt/unity/editors/$VERSION/ 
 
 # Install CMake
-RUN apt-get update && apt-get install -y cmake
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ca-certificates \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates;
 COPY --chmod=770 scripts/install-module.sh /bin/install-module
 
 # Install modules for that editor

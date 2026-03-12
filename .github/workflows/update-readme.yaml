@@ -5,10 +5,6 @@ on:
   workflow_run:           # Trigger from images
     workflows: ["Individual Runners", "😎 Uber Runner"]
     types: [completed]
-  push:
-    paths:
-      - .github/workflows/update-readme.yaml
-      - .gitea/workflows/scripts/update-readme.py
       
 jobs:
   update-readme:
