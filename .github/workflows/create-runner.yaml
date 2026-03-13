@@ -96,19 +96,3 @@ jobs:
             MODULE=${{ matrix.platform }}
           tags: lachee/unity-runner:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
           push: true
-
-      - name:
-        run: .gitea/workflows/scripts/build-runner-image.sh
-        id: build-image
-        env:
-          UNITY_VERSION: ${{ matrix.version }}
-          UNITY_MODULES: ${{ matrix.platform }}
-          IMAGE: "${{ vars.DOCKERHUB_USERNAME }}/unity-runner"
-          TAG: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
-          
-      - name: Docker Push
-        run: |
-          echo "Pushing Docker Image  ${{ steps.build-image.outputs.FULL_IMAGE }}"
-          echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"
-          echo "- Tag: ${{ steps.build-image.outputs.TAG }}"
-          docker push ${{ steps.build-image.outputs.FULL_IMAGE }}
