@@ -31,26 +31,42 @@ on:
 
 env:
   DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY != '' && vars.DOCKER_REGISTRY || 'docker.io' }}
-  UNITY_VERSION: ${{ github.event.inputs.unity_version }}
   GAMECI_OS: ubuntu
   GAMECI_VERSION: 3
 
-
 jobs:
-  precache:
+  version:
     runs-on: ubuntu-latest
-    name: 📦️ Mirror GameCI's Unity editor
+    name: 🧾 Check Unity Version
+    outputs:
+      UNITY_VERSION: ${{ steps.get-version.outputs.UNITY_VERSION }}
     steps:
       - uses: actions/checkout@v6
         with:
           sparse-checkout: versions.txt
 
       - name: Get Unity Version
-        if: ${{ github.event.inputs.unity_version == '' }}
+        id: get-version
         run: |
-          VERSION=$(head -n 1 versions.txt)
-          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
+          if [ -z "${{ github.event.inputs.unity_version }}" ]; then
+            VERSION=$(head -n 1 versions.txt)
+          else
+            VERSION="${{ github.event.inputs.unity_version }}"
+          fi
+          
           echo "Unity Version: $VERSION"
+          echo "UNITY_VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+  precache:
+    runs-on: ubuntu-latest
+    name: 📦️ Mirror GameCI's editor
+    needs: version
+    env:
+      UNITY_VERSION: ${{ needs.version.outputs.UNITY_VERSION }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: versions.txt
 
       - name: Install skopeo
         run: |
@@ -65,17 +81,18 @@ jobs:
             --password "${{ secrets.DOCKER_PASSWORD }}" \
             ${{ env.DOCKER_REGISTRY }}
           
-          TAG="${GAMECI_OS}-${UNITY_VERSION}-base-${GAMECI_VERSION}"
+          TAG="${GAMECI_OS}-${{ env.UNITY_VERSION }}-base-${GAMECI_VERSION}"
           skopeo copy \
             --dest-tls-verify=false \
             docker://docker.io/unityci/editor:${TAG} \
             docker://${{ env.DOCKER_REGISTRY }}/unityci/editor:${TAG}
 
-
-
   build:
     runs-on: ubuntu-latest
-    needs: [ precache ]
+    needs: [ version, precache ]
+    env:
+      UNITY_VERSION: ${{ needs.version.outputs.UNITY_VERSION }}
+
     strategy:
       max-parallel: 1
       matrix:
@@ -92,13 +109,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Get Unity Version
-        if: ${{ github.event.inputs.unity_version == '' }}
-        run: |
-          VERSION=$(head -n 1 versions.txt)
-          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Unity Version: $VERSION"
-
       - name: Login to Docker Registry
         uses: docker/login-action@v3
         if: ${{ secrets.DOCKER_USERNAME != '' }}
@@ -107,7 +117,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Docker Build
+      - name: Pull images
+        run: |
+          BASE_TAG="$${GAMECI_OS}-${{ env.UNITY_VERSION }}-base-${GAMECI_VERSION}"
+          echo "Pulling base image $BASE_TAG"
+          docker pull "${{ env.DOCKER_REGISTRY }}/unityci/editor:$BASE_TAG"
+          echo "BASE_TAG=$BASE_TAG" >> "$GITHUB_OUTPUT"
+
+          IMAGE_TAG="${GAMECI_OS}-${{ env.UNITY_VERSION }}-${matrix.platform}-runner"
+          echo "Pulling existing image $IMAGE_TAG to populate cache"
+          docker pull "${{ env.DOCKER_REGISTRY }}/unityci/editor:$IMAGE_TAG"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build docker
         run: .gitea/workflows/scripts/build-runner-image.sh
         id: build-image
         env:
@@ -119,7 +141,7 @@ jobs:
           UNITY_MODULES: ${{ matrix.platform }}
           UNITY_VERSION: ${{ env.UNITY_VERSION }}
 
-      - name: Docker Push
+      - name: Push image
         run: |
             echo "Pushing Docker Image  ${{ steps.build-image.outputs.FULL_IMAGE }}"
             echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"

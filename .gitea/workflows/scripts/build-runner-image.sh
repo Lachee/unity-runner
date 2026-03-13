@@ -90,8 +90,14 @@ if [ -z "${DOCKER_BUILD_ARGS}" ]; then
     DOCKER_BUILD_ARGS=""
 fi
 
-BASE_TAG=${GAMECI_OS}-${UNITY_VERSION}-base-${GAMECI_VERSION}
-BASE_IMAGE=unityci/editor:${BASE_TAG}
+# Ensure the base tag is set
+if [ -z "${BASE_IMAGE}" ]; then
+    if [ -z "${BASE_TAG}" ]; then
+        BASE_TAG="${GAMECI_OS}-${UNITY_VERSION}-base-${GAMECI_VERSION}"
+    fi
+    BASE_IMAGE=unityci/editor:${BASE_TAG}
+fi
+
 DEST_IMAGE=${IMAGE}:${TAG}
 
 echo "Building Docker image ${DEST_IMAGE}"
