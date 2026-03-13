@@ -31,7 +31,7 @@ on:
 
 jobs:
   version:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     name: 🧾 Check Unity Version
     outputs:
       UNITY_VERSION: ${{ steps.get-version.outputs.UNITY_VERSION }}
