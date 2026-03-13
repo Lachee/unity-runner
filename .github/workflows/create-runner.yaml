@@ -29,10 +29,6 @@ on:
       - dockerfiles/runner.dockerfile
       - .github/workflows/create-runner.yaml
 
-env:
-  GAMECI_OS: ubuntu
-  GAMECI_VERSION: 3
-
 jobs:
   version:
     runs-on: ubuntu-slim
@@ -58,10 +54,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ version ]
     environment: "Docker Hub"
+    env:
+      GAMECI_OS: ubuntu
+      GAMECI_VERSION: 3
+
     strategy:
       matrix:
         os:
-          - "$GAMECI_OS"
+          - ${{ env.GAMECI_OS }}
         version:
           - ${{ needs.version.outputs.UNITY_VERSION }}
         platform: 
@@ -92,7 +92,7 @@ jobs:
           file: dockerfiles/runner.dockerfile
           build-args: |
             VERSION=${{ matrix.version }}
-            BASE_IMAGE=unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-$GAMECI_VERSION
+            BASE_IMAGE=unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-${{ env.GAMECI_VERSION }}
             MODULE=${{ matrix.platform }}
           tags: lachee/unity-runner:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
           push: true
