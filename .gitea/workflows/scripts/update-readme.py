@@ -12,6 +12,9 @@ IMAGE =  os.getenv('IMAGE')
 README_PATH="README.md"
 DOCKERHUB_REGISTRY = "registry-1.docker.io"
 
+def version_key(v: str):
+    return tuple(int(x.rstrip('f')) if x.rstrip('f').isdigit() else x for x in re.split(r'[.\-]', v))
+
 def format_bytes(size_bytes : int) -> str:
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size_bytes < 1024.0:
@@ -113,8 +116,8 @@ def create_table(repository : str, tags : list[object]) -> str:
     markdown += f"|-----|{'|'.join('-' * len(m) for m in sorted_mods)}|\n"
 
     # For each item, check each available module and see if this version has that available.
-    sorted_versions = sorted(versions, key=lambda x: x[0], reverse=True)
-    for ver, mods in sorted_versions.items():
+    sorted_versions = sorted(versions.items(), key=lambda x: version_key(x[0]), reverse=True)
+    for ver, mods in sorted_versions:
         row = [ mods[mod] if mod in mods else '❌' for mod in sorted_mods ]
         markdown += f"|{ver}|{'|'.join(row)}|\n"
 

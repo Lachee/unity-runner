@@ -24,6 +24,7 @@ A table of available Docker images for Unity CI/CD:
 |Unity|all|android|ios|linux-il2cpp|mac-mono|webgl|windows-mono|
 |-----|---|-------|---|------------|--------|-----|------------|
 |6000.0.35f1|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-runner)<br>📦 15.40 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-android-runner)<br>📦 7.57 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-ios-runner)<br>📦 6.02 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-linux-il2cpp-runner)<br>📦 5.76 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-mac-mono-runner)<br>📦 6.26 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-webgl-runner)<br>📦 7.16 GB|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.35f1-windows-mono-runner)<br>📦 3.64 KB|
+|6000.0.68f1|❌|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.68f1-android-runner)<br>📦 7.47 GB|❌|❌|❌|[🐳 View](https://lhcr.io/repo/unityci/editor/tag/ubuntu-6000.0.68f1-webgl-runner)<br>📦 7.46 GB|❌|
 <!-- /table -->
 
 ## Included Software
