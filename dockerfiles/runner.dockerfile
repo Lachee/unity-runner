@@ -48,7 +48,7 @@ RUN install-module "$VERSION" "$MODULE" windows-server
 ###########################
 #          Editor         #
 ###########################
-FROM gitea/runner-images:ubuntu-latest
+FROM $BASE_OS:latest
 
 WORKDIR /tmp
 
@@ -61,6 +61,59 @@ COPY --from=builder /opt/unity/editors/$VERSION/ "$UNITY_PATH/"
 RUN echo $VERSION > "$UNITY_PATH/version"
 LABEL com.unity3d.version="$VERSION"
 LABEL com.unity3d.modules="$MODULE"
+
+# == System Packages ==
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ca-certificates \
+        curl \
+        bash \
+        git \
+        gnupg \
+        libsqlite3-dev \
+        libssl-dev \
+        pkg-config \
+        unzip \
+        wget \
+        zip  \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates;
+
+# == Runtimes, Languages, & Package Managers ==
+# - Node
+ARG NODE_VERSION=24
+LABEL org.nodejs.version="${NODE_VERSION}"
+# Node: install globally, not through nvm
+ARG NODE_VERSION=24
+LABEL org.nodejs.version="${NODE_VERSION}"
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+    | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" \
+    > /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends nodejs \
+ && corepack enable \
+ && node -v \
+ && npm -v \
+ && which node \
+ && rm -rf /var/lib/apt/lists/*
+
+# - Python 3
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# == SDKs ==
+# - Azure
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+# - AWS
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && ./aws/install
 
 # == Tools ==
 # - Blender
