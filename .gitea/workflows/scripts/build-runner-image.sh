@@ -105,7 +105,7 @@ echo "- Version: ${UNITY_VERSION}"
 echo "- Changeset: ${UNITY_CHANGESET}"
 echo "- Platfrom: ${PLATFORM}"
 echo "- Base: ${BASE_IMAGE}"
-echo "- Reditor Cache Registry: ${EDITOR_CACHE_REGISTRY}"
+echo "- Editor Cache Registry: ${EDITOR_CACHE_REGISTRY}"
 echo "- Tag: ${TAG}"
 echo "- Image: ${DEST_IMAGE}"
 
@@ -115,6 +115,7 @@ docker build \
     --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
     --build-arg "MODULE=${UNITY_MODULES}" \
     --build-arg "EDITOR_CACHE_REGISTRY=${EDITOR_CACHE_REGISTRY}" \
+    --cache-from=type=registry,ref=${EDITOR_CACHE_REGISTRY}/${DEST_IMAGE} \
     -t ${DEST_IMAGE} ${DOCKER_BUILD_ARGS} \
     -f ./dockerfiles/runner.dockerfile .
 
