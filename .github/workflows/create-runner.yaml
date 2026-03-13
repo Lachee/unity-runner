@@ -55,13 +55,12 @@ jobs:
     needs: [ version ]
     environment: "Docker Hub"
     env:
-      GAMECI_OS: ubuntu
       GAMECI_VERSION: 3
 
     strategy:
       matrix:
         os:
-          - ${{ env.GAMECI_OS }}
+          - ubuntu
         version:
           - ${{ needs.version.outputs.UNITY_VERSION }}
         platform: 
