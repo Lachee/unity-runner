@@ -7,27 +7,35 @@ import json
 DOCKER_REGISTRY = os.getenv('DOCKER_REGISTRY')
 DOCKER_USERNAME = os.getenv('DOCKER_USERNAME')
 DOCKER_PASSWORD = os.getenv('DOCKER_PASSWORD')
-IMAGE =  os.getenv('IMAGE')
+IMAGE = os.getenv('IMAGE')
 
-README_PATH="README.md"
+README_PATH = "README.md"
 DOCKERHUB_REGISTRY = "registry-1.docker.io"
+
 
 def version_key(v: str):
     return tuple(int(x.rstrip('f')) if x.rstrip('f').isdigit() else x for x in re.split(r'[.\-]', v))
 
-def format_bytes(size_bytes : int) -> str:
+
+def format_bytes(size_bytes: int) -> str:
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size_bytes < 1024.0:
             human_size = f"{size_bytes:.2f} {unit}"
             break
         size_bytes /= 1024.0
     return human_size
-    
-def get_tags_with_size(registry : str, authorization : str, repository : str) -> list[object]:
+
+
+def get_tags_with_size(registry: str, authorization: str, repository: str) -> list[object]:
     url = f"https://{registry}/v2/{repository}/tags/list"
     headers = {
         "Authorization": f"{authorization}",
-        "Accept": "application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"
+        "Accept": ",".join([
+            "application/vnd.oci.image.index.v1+json",
+            "application/vnd.docker.distribution.manifest.list.v2+json",
+            "application/vnd.oci.image.manifest.v1+json",
+            "application/vnd.docker.distribution.manifest.v2+json",
+        ])
     }
 
     print(f"Querying {url}...")
@@ -37,31 +45,36 @@ def get_tags_with_size(registry : str, authorization : str, repository : str) ->
     tags = []
     for t in all_tags:
         url = f"https://{registry}/v2/{repository}/manifests/{t}"
-        print(f"- {t}: looking up {url}...")
+        print(f"- {t}: \ttag name {url}...")
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
-        
         data = resp.json()
-        manifests = []
-        if 'manifests' in data:
-            # This is a manifest list, we need to sum the sizes of the individual manifests
-            manifests = resp.json()['manifests']
-        elif 'layers' in data:
-            # This is a single manifest, we can just take the size of the layers
-            manifests = data['layers']
-        else:
+
+        # If this is a manifest list, we need to get the manifests to get the size of the layers
+        if 'layers' not in data and 'manifests' in data:
+            manifest = data['manifests'][0]
+            url = f"https://{registry}/v2/{repository}/manifests/{manifest['digest']}"
+            print(f"- {t}: \tdigest {url}...")
+            resp = requests.get(url, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+
+        if 'layers' not in data:
             print(f"Unexpected manifest format for tag {t}: {json.dumps(data)}")
-            
-        tag = {}
-        tag['name'] = t
-        tag['registry'] = registry
-        tag['size'] = sum(manifest['size'] for manifest in  manifests)
-        tag['manifests'] = manifests
-        tags.append(tag)
+            continue
+
+        # This is a single manifest, we can just take the size of the layers
+        tags.append({
+            'name': t,
+            'registry': registry,
+            'size': sum(l['size'] for l in data['layers']),
+            'layers': data['layers']
+        })
 
     return tags
 
-def login_dockerhub(username : str, password : str, forRepository : str) -> str:
+
+def login_dockerhub(username: str, password: str, forRepository: str) -> str:
     # Get token for Docker Hub API
     auth_url = "https://auth.docker.io/token"
     service = "registry.docker.io"
@@ -75,12 +88,14 @@ def login_dockerhub(username : str, password : str, forRepository : str) -> str:
     token = resp.json()["token"]
     return f"Bearer {token}"
 
-def login_registry(username : str, password : str) -> str:
+
+def login_registry(username: str, password: str) -> str:
     credentials = f"{username}:{password}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     return f"Basic {encoded_credentials}"
 
-def create_label(repository: str, tag : object) -> str:
+
+def create_label(repository: str, tag: object) -> str:
     name = tag['name']
     registry = tag['registry']
     size = format_bytes(tag['size'])
@@ -89,11 +104,12 @@ def create_label(repository: str, tag : object) -> str:
         link = f"https://hub.docker.com/layers/{repository}/{name}"
     return f"[🐳 View]({link})<br>📦 {size}"
 
-def create_table(repository : str, tags : list[object]) -> str:
-    markdown : str = ""
-    
-    versions : dict[str, dict[str, str]] = {}
-    all_modules : set[str] = set()
+
+def create_table(repository: str, tags: list[object]) -> str:
+    markdown: str = ""
+
+    versions: dict[str, dict[str, str]] = {}
+    all_modules: set[str] = set()
 
     # Build a table of versions
     pattern = re.compile(r"(?P<os>\w+)(?P<version>-\d+\.\d+\.\d+\w*)(?P<modules>-[a-zA-Z-0-9]+)?-runner")
@@ -102,7 +118,7 @@ def create_table(repository : str, tags : list[object]) -> str:
         if not matches:
             print(f"- skipping {tag['name']}")
             continue
-        
+
         version = matches.group("version").strip('-')
         modules = matches.group("modules").strip('-') if matches.group('modules') else "all"
         all_modules.add(modules)
@@ -118,18 +134,20 @@ def create_table(repository : str, tags : list[object]) -> str:
     # For each item, check each available module and see if this version has that available.
     sorted_versions = sorted(versions.items(), key=lambda x: version_key(x[0]), reverse=True)
     for ver, mods in sorted_versions:
-        row = [ mods[mod] if mod in mods else '❌' for mod in sorted_mods ]
+        row = [mods[mod] if mod in mods else '❌' for mod in sorted_mods]
         markdown += f"|{ver}|{'|'.join(row)}|\n"
 
     return markdown
 
-def replace_readme_table(readme : str, table : str) -> str:
+
+def replace_readme_table(readme: str, table: str) -> str:
     pattern = r"(<!-- table -->).*(<!-- /table -->)"
     return re.sub(pattern, r'\1\n' + table + r'\2', readme, flags=re.DOTALL)
 
+
 def main():
-    auth_token : str
-    registry : str
+    auth_token: str
+    registry: str
 
     if DOCKER_REGISTRY:
         registry = DOCKER_REGISTRY
