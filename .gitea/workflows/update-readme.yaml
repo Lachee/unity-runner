@@ -27,7 +27,7 @@ jobs:
       - name: Generate Docker Images Table
         run: python .gitea/workflows/scripts/update-readme.py
         env:
-          DOCKER_REGISTRY: docker.lakes.house
+          DOCKER_REGISTRY: lhcr.io
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           IMAGE: unityci/editor

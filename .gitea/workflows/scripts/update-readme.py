@@ -34,15 +34,26 @@ def get_tags_with_size(registry : str, authorization : str, repository : str) ->
     tags = []
     for t in all_tags:
         url = f"https://{registry}/v2/{repository}/manifests/{t}"
-        print(f"- {t} looking up {url}...")
+        print(f"- {t}: looking up {url}...")
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
-        layers = resp.json()['layers']
+        
+        data = resp.json()
+        manifests = []
+        if 'manifests' in data:
+            # This is a manifest list, we need to sum the sizes of the individual manifests
+            manifests = resp.json()['manifests']
+        elif 'layers' in data:
+            # This is a single manifest, we can just take the size of the layers
+            manifests = data['layers']
+        else:
+            print(f"Unexpected manifest format for tag {t}: {json.dumps(data)}")
+            
         tag = {}
         tag['name'] = t
         tag['registry'] = registry
-        tag['size'] = sum(layer['size'] for layer in  layers)
-        tag['layers'] = layers
+        tag['size'] = sum(manifest['size'] for manifest in  manifests)
+        tag['manifests'] = manifests
         tags.append(tag)
 
     return tags
@@ -85,7 +96,10 @@ def create_table(repository : str, tags : list[object]) -> str:
     pattern = re.compile(r"(?P<os>\w+)(?P<version>-\d+\.\d+\.\d+\w*)(?P<modules>-[a-zA-Z-0-9]+)?-runner")
     for tag in tags:
         matches = pattern.match(tag['name'])
-        os = matches.group("os").strip('-')
+        if not matches:
+            print(f"- skipping {tag['name']}")
+            continue
+        
         version = matches.group("version").strip('-')
         modules = matches.group("modules").strip('-') if matches.group('modules') else "all"
         all_modules.add(modules)
