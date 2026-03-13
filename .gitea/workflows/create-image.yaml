@@ -99,10 +99,10 @@ jobs:
         platform: 
           - webgl
           - android
-          - ios
-          - mac-mono
-          - windows-mono
-          - linux-il2cpp
+          # - ios
+          # - mac-mono
+          # - windows-mono
+          # - linux-il2cpp
         
     name: Build 🐳 ${{ matrix.platform }}
     if: ${{ github.event.inputs.platform == 'all' || github.event.inputs.platform == '' || github.event.inputs.platform == matrix.platform }}
