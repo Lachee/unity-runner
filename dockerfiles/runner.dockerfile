@@ -72,6 +72,7 @@ RUN apt-get update && \
         curl \
         bash \
         git \
+        gnupg \
         libsqlite3-dev \
         libssl-dev \
         pkg-config \
@@ -84,17 +85,24 @@ RUN apt-get update && \
 
 # == Runtimes, Languages, & Package Managers ==
 # - Node
-ARG NODE_VERSION=20
+ARG NODE_VERSION=24
 LABEL org.nodejs.version="${NODE_VERSION}"
-ENV NVM_DIR=/root/.nvm
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash; \
-    . "$NVM_DIR/nvm.sh"; \
-    nvm install ${NODE_VERSION}; \
-    nvm alias default ${NODE_VERSION}; \
-    node -v; \
-    corepack enable; \
-    pnpm -v
-ENV PATH="$NVM_DIR/versions/node/v${NODE_VERSION}/bin:$PATH"
+# Node: install globally, not through nvm
+ARG NODE_VERSION=24
+LABEL org.nodejs.version="${NODE_VERSION}"
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+    | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" \
+    > /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends nodejs \
+ && corepack enable \
+ && node -v \
+ && npm -v \
+ && which node \
+ && rm -rf /var/lib/apt/lists/*
+
 # - Python 3
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-pip \
@@ -142,5 +150,5 @@ WORKDIR /workspace
 RUN rm -rf /tmp
 
 # Done
-# ENTRYPOINT [ "/entrypoint.sh" ]
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT []
+CMD ["/bin/bash"]
