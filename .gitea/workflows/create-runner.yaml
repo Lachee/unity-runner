@@ -1,47 +1,124 @@
-name: 😎 Uber Runner
+name: 🏃‍♂️ Create Runners
 
-on:    
+on:
   workflow_dispatch:
-  
+    inputs:
+      unity_version:
+        description: 'Unity Version'
+        required: false
+        default: '6000.0.35f1'
+        type: string
+      platform:
+        description: 'Platform'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - webgl
+          - android
+          - ios
+          - mac-mono
+          - windows-mono
+          - linux-il2cpp
+
+  push:
+    branches: [main]
+    paths:
+      - versions.txt
+      - dockerfiles/runner.dockerfile
+      - .github/workflows/create-runner.yaml
+
 jobs:
-  build-docker:
-    runs-on: ubuntu-latest
-    env:
-      DOCKER_REGISTRY: docker.lakes.house/
-      UNITY_MODULES: webgl android ios mac-mono windows-mono linux-il2cpp
-      GAMECI_OS: ubuntu
-      GAMECI_VERSION: 3
-      
-    name: Build
+  version:
+    runs-on: ubuntu-slim
+    name: 🧾 Check Unity Version
+    outputs:
+      UNITY_VERSION: ${{ steps.get-version.outputs.UNITY_VERSION }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Login to Docker Registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v6
         with:
-          registry: ${{ env.DOCKER_REGISTRY }}
+          sparse-checkout: versions.txt
+
+      - name: Get Unity Version
+        id: get-version
+        run: |
+          VERSION="${{ github.event.inputs.unity_version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(head -n 1 versions.txt)
+          fi
+          echo "Unity Version: $VERSION"
+          echo "UNITY_VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+  precache:
+    runs-on: ubuntu-latest
+    name: 📦️ Mirror GameCI's editor
+    needs: version
+    env:
+      UNITY_VERSION: ${{ needs.version.outputs.UNITY_VERSION }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: versions.txt
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
+      - name: Cache Base Image
+        run: |
+          set -eux
+          skopeo login --tls-verify=false \
+            --username "${{ secrets.DOCKER_USERNAME }}" \
+            --password "${{ secrets.DOCKER_PASSWORD }}" \
+            ${{ vars.DOCKER_REGISTRY }}
+          
+          TAG="ubuntu-${{ env.UNITY_VERSION }}-base-3"
+          skopeo copy \
+            --dest-tls-verify=false \
+            docker://docker.io/unityci/editor:${TAG} \
+            docker://${{ vars.DOCKER_REGISTRY }}/unityci/editor:${TAG}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [ version, precache ]
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+        version:
+          - ${{ needs.version.outputs.UNITY_VERSION }}
+        platform:
+          - webgl
+#          - android
+#          - ios
+#          - mac-mono
+#          - windows-mono
+#          - linux-il2cpp
+
+    name: ${{ matrix.version }} - ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: "⚙️ Setup Buildx"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "🔑 Login to Docker registry"
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          
-      - name: Get Unity Version
-        run: |
-          VERSION=$(head -n 1 versions.txt)
-          echo "UNITY_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Unity Version: $VERSION"
 
-      - name: Docker Build
-        run: .gitea/workflows/scripts/build-runner-image.sh
-        id: build-image
-        env:
-          UNITY_VERSION: ${{ env.UNITY_VERSION }}
-          UNITY_MODULES: ${{ env.UNITY_MODULES }}
-          GAMECI_VERSION: ${{ env.GAMECI_VERSION }}
-          GAMECI_OS: ${{ env.GAMECI_OS }}
-          IMAGE: ${{ env.DOCKER_REGISTRY }}unityci/editor
-          TAG: ${{ env.GAMECI_OS }}-${{ env.UNITY_VERSION }}-runner
-
-      - name: Docker Push
-        run: |
-            echo "Pushing Docker Image  ${{ steps.build-image.outputs.FULL_IMAGE }}"
-            echo "- Image: ${{ steps.build-image.outputs.IMAGE }}"
-            echo "- Tag: ${{ steps.build-image.outputs.TAG }}"
-            docker push ${{ steps.build-image.outputs.FULL_IMAGE }}
+      - name: "🐋 Build image"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerfiles/runner.dockerfile
+          build-args: |
+            VERSION=${{ matrix.version }}
+            BASE_IMAGE=${{ vars.DOCKER_REGISTRY }}/unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-3
+            MODULE=${{ matrix.platform }}
+          tags: ${{ vars.DOCKER_REGISTRY }}/unityci/editor:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
+          push: true
