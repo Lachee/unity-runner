@@ -27,7 +27,7 @@ on:
     paths: 
       - versions.txt
       - dockerfiles/runner.dockerfile
-      - create-runner.yaml
+      - .github/workflows/create-runner.yaml
 
 env:
   GAMECI_OS: ubuntu
@@ -57,7 +57,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [ version ]
-
+    environment: "Docker Hub"
     strategy:
       matrix:
         os:
