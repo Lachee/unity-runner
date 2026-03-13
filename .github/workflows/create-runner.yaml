@@ -54,9 +54,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ version ]
     environment: "Docker Hub"
-    env:
-      GAMECI_VERSION: 3
-
     strategy:
       matrix:
         os:
@@ -91,7 +88,7 @@ jobs:
           file: dockerfiles/runner.dockerfile
           build-args: |
             VERSION=${{ matrix.version }}
-            BASE_IMAGE=unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-${{ env.GAMECI_VERSION }}
+            BASE_IMAGE=unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-3
             MODULE=${{ matrix.platform }}
           tags: lachee/unity-runner:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
           push: true

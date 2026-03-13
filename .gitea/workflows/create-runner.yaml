@@ -88,7 +88,7 @@ jobs:
         os:
           - ubuntu
         version:
-          - ${{ needs.version.outputs.UNITY_VERSION }}
+          - "${{ needs.version.outputs.UNITY_VERSION }}"
         platform:
           - webgl
 #          - android
@@ -97,7 +97,7 @@ jobs:
 #          - windows-mono
 #          - linux-il2cpp
 
-    name: ${{ matrix.version }} - ${{ matrix.platform }}
+    name: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
 

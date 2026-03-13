@@ -66,28 +66,31 @@ LABEL com.unity3d.modules="$MODULE"
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        ca-certificates \
-        curl \
         bash \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
         git \
+        git-lfs \
         gnupg \
+        jq \
         libsqlite3-dev \
         libssl-dev \
+        openjdk-17-jre-headless \
         pkg-config \
+        software-properties-common \
         unzip \
         wget \
-        zip  \
+        xz-utils \
+        zip \
         zlib1g-dev \
+     && git lfs install --system \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates;
 
 # == Runtimes, Languages, & Package Managers ==
 # - Node
-ARG NODE_VERSION=24
-LABEL org.nodejs.version="${NODE_VERSION}"
-# Node: install globally, not through nvm
 ARG NODE_VERSION=24
 LABEL org.nodejs.version="${NODE_VERSION}"
 RUN mkdir -p /etc/apt/keyrings \
@@ -102,6 +105,24 @@ RUN mkdir -p /etc/apt/keyrings \
  && npm -v \
  && which node \
  && rm -rf /var/lib/apt/lists/*
+
+# - Powershell & Dotnet
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    apt-transport-https \
+ && wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb \
+ && dpkg -i packages-microsoft-prod.deb \
+ && rm packages-microsoft-prod.deb \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      powershell \
+      dotnet-sdk-8.0 \
+ && pwsh --version \
+ && rm -rf /var/lib/apt/lists/*
+
+# - ReSharper
+RUN dotnet tool install -g JetBrains.ReSharper.GlobalTools
+ENV PATH="$PATH:/root/.dotnet/tools"
 
 # - Python 3
 RUN apt-get update \
