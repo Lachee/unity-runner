@@ -113,7 +113,8 @@ def create_table(repository : str, tags : list[object]) -> str:
     markdown += f"|-----|{'|'.join('-' * len(m) for m in sorted_mods)}|\n"
 
     # For each item, check each available module and see if this version has that available.
-    for ver, mods in versions.items():
+    sorted_versions = sorted(versions, key=lambda x: x[0], reverse=True)
+    for ver, mods in sorted_versions.items():
         row = [ mods[mod] if mod in mods else '❌' for mod in sorted_mods ]
         markdown += f"|{ver}|{'|'.join(row)}|\n"
 
