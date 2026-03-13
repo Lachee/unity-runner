@@ -91,11 +91,11 @@ jobs:
           - "${{ needs.version.outputs.UNITY_VERSION }}"
         platform:
           - webgl
-#          - android
-#          - ios
-#          - mac-mono
-#          - windows-mono
-#          - linux-il2cpp
+          - android
+          - ios
+          - mac-mono
+          - windows-mono
+          - linux-il2cpp
 
     name: ${{ matrix.platform }}
     steps:
@@ -117,8 +117,10 @@ jobs:
           context: .
           file: dockerfiles/runner.dockerfile
           build-args: |
-            VERSION=${{ matrix.version }}
-            BASE_IMAGE=${{ vars.DOCKER_REGISTRY }}/unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-3
-            MODULE=${{ matrix.platform }}
+            UNITY_VERSION=${{ matrix.version }}
+            UNITY_PLATFORM=${{ matrix.platform }}
+            GAMECI_OS=${{ matrix.os }}
+            GAMECI_VERSION=3
+            GAMECI_IMAGE=${{ vars.DOCKER_REGISTRY }}/unityci/editor
           tags: ${{ vars.DOCKER_REGISTRY }}/unityci/editor:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
           push: true

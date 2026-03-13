@@ -87,8 +87,10 @@ jobs:
           context: .
           file: dockerfiles/runner.dockerfile
           build-args: |
-            VERSION=${{ matrix.version }}
-            BASE_IMAGE=unityci/editor:${{ matrix.os }}-${{ matrix.version }}-base-3
-            MODULE=${{ matrix.platform }}
+            UNITY_VERSION=${{ matrix.version }}
+            UNITY_PLATFORM=${{ matrix.platform }}
+            GAMECI_OS=${{ matrix.os }}
+            GAMECI_VERSION=3
+            GAMECI_IMAGE=unityci/editor
           tags: lachee/unity-runner:${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform }}-runner
           push: true

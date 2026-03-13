@@ -1,15 +1,66 @@
-ARG GAMECI_OS=ubuntu
-ARG GAMECI_VERSION=3
-ARG GAMECI_IMAGE=unityci/editor
+ARG BASE_OS=ubuntu
+ARG VERSION=2023.1.0f1
+ARG EDITOR_CACHE_REGISTRY=docker.io
 
-ARG UNITY_VERSION=2023.1.0f1
-ARG UNITY_PLATFORM=windows-mono
-FROM ${GAMECI_IMAGE}:${GAMECI_OS}-${UNITY_VERSION}-${UNITY_PLATFORM}-${GAMECI_VERSION}
+###########################
+#         Builder         #
+###########################
+FROM ${EDITOR_CACHE_REGISTRY}/unityci/editor:${BASE_OS}-${VERSION}-base-3 AS editor
+FROM unityci/hub AS builder
 
-LABEL com.unity3d.version="$UNITY_VERSION"
-LABEL com.unity3d.platform="$UNITY_PLATFORM"
+# Install editor
+ARG VERSION
+COPY --from=editor "$UNITY_PATH/" /opt/unity/editors/$VERSION/ 
+
+# Install CMake
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ca-certificates \
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates;
+COPY --chmod=770 scripts/install-module.sh /bin/install-module
+
+# Install modules for that editor
+ARG MODULE
+RUN install-module "$VERSION" "$MODULE" android
+RUN install-module "$VERSION" "$MODULE" ios
+RUN install-module "$VERSION" "$MODULE" appletv
+RUN install-module "$VERSION" "$MODULE" linux-mono
+RUN install-module "$VERSION" "$MODULE" linux-il2cpp
+RUN install-module "$VERSION" "$MODULE" webgl
+RUN install-module "$VERSION" "$MODULE" windows
+RUN install-module "$VERSION" "$MODULE" vuforia-ar
+RUN install-module "$VERSION" "$MODULE" windows-mono
+RUN install-module "$VERSION" "$MODULE" lumin
+RUN install-module "$VERSION" "$MODULE" mac-mono
+RUN install-module "$VERSION" "$MODULE" mac-il2cpp
+RUN install-module "$VERSION" "$MODULE" universal-windows-platform
+RUN install-module "$VERSION" "$MODULE" uwp-il2cpp
+RUN install-module "$VERSION" "$MODULE" uwp-.net
+RUN install-module "$VERSION" "$MODULE" linux-server
+RUN install-module "$VERSION" "$MODULE" windows-server
+
+###########################
+#          Editor         #
+###########################
+FROM $BASE_OS:latest
 
 WORKDIR /tmp
+
+ENV UNITY_PATH="/opt/unity"
+
+# Always put "Editor" and "modules.json" directly in $UNITY_PATH
+ARG VERSION
+ARG MODULE
+COPY --from=builder /opt/unity/editors/$VERSION/ "$UNITY_PATH/"
+RUN echo $VERSION > "$UNITY_PATH/version"
+LABEL com.unity3d.version="$VERSION"
+LABEL com.unity3d.modules="$MODULE"
 
 # == System Packages ==
 ENV DEBIAN_FRONTEND=noninteractive
